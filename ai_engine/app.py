@@ -10,11 +10,11 @@ from urllib.parse import urlparse
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), '../backend/.env'))
+load_dotenv()
 
 app = Flask(__name__)
 
-NODE_API_URL = "http://localhost:8000"
+NODE_API_URL = os.getenv("NODE_API_URL", "http://localhost:8000")
 
 s3_client = boto3.client(
     's3',
