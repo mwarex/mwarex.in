@@ -167,7 +167,19 @@ def process_video_background(video_id, file_url, ai_prompt):
             
         try:
             report_progress(video_id, 60, "Running basic intelligent silence removal...")
-            subprocess.run(["auto-editor", input_file, "--margin", "0.2s", "-o", output_file], check=True, timeout=300)
+            if not os.path.exists(input_file):
+                raise Exception(f"Input file not found: {input_file}")
+            file_size = os.path.getsize(input_file)
+            print(f"[AI AGENT] Input file size: {file_size} bytes")
+            if file_size < 1000:
+                raise Exception(f"Input file too small ({file_size} bytes), download may have failed")
+            result = subprocess.run(
+                ["auto-editor", input_file, "--margin", "0.2s", "--no-open", "-o", output_file],
+                check=True, timeout=300, capture_output=True, text=True
+            )
+            print(f"[AI AGENT] auto-editor stdout: {result.stdout}")
+            if result.stderr:
+                print(f"[AI AGENT] auto-editor stderr: {result.stderr}")
             report_progress(video_id, 80, "Silence removal complete. Preparing upload...")
             report_progress(video_id, 95, "Uploading Fast Fallback Edit back to AWS S3...")
             s3_key = f"ai_edits/{video_id}_fallback_{int(time.time())}.mp4"
