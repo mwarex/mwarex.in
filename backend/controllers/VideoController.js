@@ -147,7 +147,7 @@ class VideoController extends BaseController {
                         const pythonUrl = process.env.PYTHON_API_URL || "http://localhost:5001";
                         if (global.fetch) {
                             try {
-                                await global.fetch(`${pythonUrl}/process_video`, {
+                                const response = await global.fetch(`${pythonUrl}/process_video`, {
                                     method: "POST",
                                     headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({
@@ -156,6 +156,10 @@ class VideoController extends BaseController {
                                         aiPrompt: description || "Auto Edit"
                                     })
                                 });
+                                
+                                if (!response.ok) {
+                                  throw new Error(`AI Engine returned status ${response.status}`);
+                                }
                                 aiSuccess = true;
                             } catch (netErr) {
                                 console.error("AI Engine network err:", netErr.message);

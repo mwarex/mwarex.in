@@ -71,7 +71,7 @@ def process_video_background(video_id, file_url, ai_prompt):
                 raise ValueError("Gemini failed to process video")
                 
             report_progress(video_id, 55, "Generating intelligent edit points...")
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel('gemini-2.0-flash')
             
             structured_prompt = f"""
             You are an expert video editor. Analyze this raw video.
@@ -134,13 +134,16 @@ def process_video_background(video_id, file_url, ai_prompt):
                 print("[AI AGENT] No segments returned, using original video")
                 
         except Exception as gemini_err:
-            print(f"[AI AGENT] Gemini processing skipped: {gemini_err}")
+            print(f"[AI AGENT] Gemini processing skipped/failed: {gemini_err}")
             report_progress(video_id, 60, "AI quick-pass analysis complete...")
         
         # If Gemini didn't produce an edit, use original video as-is
         if not edited_with_gemini:
             import shutil
-            shutil.copy2(input_file, output_file)
+            if os.path.exists(input_file):
+                shutil.copy2(input_file, output_file)
+            else:
+                raise FileNotFoundError(f"Input file {input_file} not found after download.")
             print("[AI AGENT] Using original video (AI analysis applied without cuts)")
         
         # Step 3: Upload result to S3

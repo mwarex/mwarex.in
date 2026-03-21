@@ -436,7 +436,7 @@ export function S3UploadModal({
               </div>
 
               {/* ── Thumbnail Section ──────────────────────────────────────── */}
-              {!isRaw && (
+              {(
                 <div className="border border-border rounded-xl p-3.5 bg-secondary/5 space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
