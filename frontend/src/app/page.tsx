@@ -12,6 +12,7 @@ import { ProductPreview } from "@/components/product-preview";
 import { Layers, ArrowRight, Github, Twitter, Linkedin, Sparkles, Youtube, Play } from "lucide-react";
 import { MWareXLogo } from '@/components/mwarex-logo';
 import { LandingPageOnboarding } from "@/components/onboarding";
+import { ComparisonSection } from "@/components/comparison-section";
 import { CrackedButton } from "@/components/cracked-button";
 import { FounderSection } from "@/components/founder-section";
 
@@ -57,6 +58,8 @@ export default function LandingPage() {
           </section>
 
           <HowItWorks />
+
+          <ComparisonSection />
 
           <FeatureGrid />
 
