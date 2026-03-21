@@ -17,7 +17,7 @@ export function ProductPreview() {
                         className="flex items-center gap-4 text-[#C8A97E] text-[10px] font-bold tracking-[0.25em] mb-8 uppercase"
                     >
                         <span className="w-8 h-[1px] bg-[#C8A97E] opacity-50"></span>
-                        System Architecture
+                        Why MWareX Succeeds
                         <span className="w-8 h-[1px] bg-[#C8A97E] opacity-50"></span>
                     </motion.div>
 
@@ -28,7 +28,7 @@ export function ProductPreview() {
                         transition={{ delay: 0.1, duration: 0.8 }}
                         className="text-4xl md:text-5xl lg:text-7xl font-serif text-[#ffffff] font-normal leading-tight tracking-tight mb-8"
                     >
-                        Built for <span className="italic text-[#C8A97E]">Scale & Security.</span>
+                        Replacing the <span className="italic text-[#C8A97E]">Fragmented Workflow.</span>
                     </motion.h2>
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
@@ -37,7 +37,7 @@ export function ProductPreview() {
                         transition={{ delay: 0.3, duration: 0.8 }}
                         className="text-white/40 text-[15px] max-w-2xl mx-auto font-light leading-relaxed"
                     >
-                        Every workspace runs in isolation with OAuth 2.0 authentication, role-based access, and encrypted cloud storage — so creators and editors collaborate without compromise.
+                        We eliminate the chaos of using 5 different scattered apps by bringing file storage, AI editing, secure communication, and publishing into a single autonomous engine.
                     </motion.p>
                 </div>
 
@@ -45,28 +45,26 @@ export function ProductPreview() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
 
                     <FeatureCard
-                        title="Isolated Workspaces"
-                        description="Every creator gets a private, sandboxed workspace. Video assets, drafts, and credentials are stored in encrypted cloud environments — no cross-tenant data leaks, ever."
+                        title="End-to-End Autonomous Platform"
+                        description="Stop juggling Google Drive, WhatsApp, Premiere Pro, and YouTube. MWareX handles the entire lifecycle from raw 10GB uploads to the final YouTube stream in one place."
                         delay={0.1}
                         index={0}
                     >
                         <Lock className="w-10 h-10 text-white/20 group-hover:text-[#C8A97E] transition-colors duration-500 mb-8" strokeWidth={1} />
                     </FeatureCard>
 
-                    {/* Card 2: Regulated & Compliant */}
                     <FeatureCard
-                        title="Role-Based Access Control"
-                        description="Creators own the channel. Editors get scoped access — upload edits, leave comments, but never touch publish settings. OAuth 2.0 tokens ensure only authorized actions reach YouTube."
+                        title="Zero File Transfer Nightmare"
+                        description="Raw footage is processed directly in the cloud. Our AI engine edits the video internally, meaning you never have to download or re-upload massive GB files again."
                         delay={0.2}
                         index={1}
                     >
                         <CheckCircle2 className="w-10 h-10 text-white/20 group-hover:text-[#C8A97E] transition-colors duration-500 mb-8" strokeWidth={1} />
                     </FeatureCard>
 
-                    {/* Card 3: Cloud-Native Pipeline */}
                     <FeatureCard
-                        title="Cloud-Native Pipeline"
-                        description="Videos flow through a managed pipeline — raw upload, AI-assisted editing, creator review, one-click YouTube publish. All processed on cloud infrastructure, nothing runs on your device."
+                        title="Instant AI Output vs Slow Freelancers"
+                        description="Traditional editors take hours or days just to cut silences and mistakes. Our AI completes the heavy lifting in minutes, saving you thousands of dollars in editing costs."
                         delay={0.3}
                         index={2}
                     >
@@ -75,10 +73,9 @@ export function ProductPreview() {
                         </svg>
                     </FeatureCard>
 
-                    {/* Card 4: Real-Time Sync */}
                     <FeatureCard
-                        title="Real-Time Sync"
-                        description="Live room-based collaboration between creators and editors. Instant notifications, comment threads on timelines, and status tracking — your team stays in sync, not in chaos."
+                        title="Secure Marketplace & Payments"
+                        description="Need advanced cinematic edits? Hire verified editors directly inside MWareX. No scammed payments, no channel password sharing, and completely protected through escrow."
                         delay={0.4}
                         index={3}
                     >

@@ -8,34 +8,34 @@ import { cn } from "@/lib/utils";
 const workflowSteps = [
     {
         step: 1,
-        title: "Sign up with Google",
-        description: "Create your account instantly with one-click Google authentication. No lengthy forms, no waiting.",
-        icon: UserPlus,
+        title: "Upload Raw Footage",
+        description: "Drop huge 10GB+ raw files directly into your workspace. No more Google Drive links or WeTransfer limits.",
+        icon: Upload,
     },
     {
         step: 2,
-        title: "Invite Editors",
-        description: "Send secure invite links to your editing team. They get controlled access without seeing your credentials.",
-        icon: Users,
+        title: "AI Content Analysis",
+        description: "Our multimodal AI analyzes your footage to identify mistakes, silences, stutters, and cinematic B-roll automatically.",
+        icon: UserPlus,
+        badge: "Powered by Gemini"
     },
     {
         step: 3,
-        title: "Upload Footage",
-        description: "Editors upload video files directly to your secure workspace. All uploads require your approval.",
-        icon: Upload,
-        badge: "Pending Approval"
+        title: "Autonomous Editing",
+        description: "The engine instantly cuts and stitches the video. What used to take days of manual editing now takes minutes.",
+        icon: Users,
     },
     {
         step: 4,
-        title: "Connect YouTube",
-        description: "Link your YouTube channel securely via the official API. Your credentials stay protected.",
-        icon: Youtube,
+        title: "AI Chat Assistant",
+        description: "Review the cut and chat directly with your video timeline to request pacing changes or specific re-edits.",
+        icon: CheckCircle,
     },
     {
         step: 5,
-        title: "Approve & Publish",
-        description: "Review the content, add notes if needed, and publish directly to your channel with one click.",
-        icon: CheckCircle,
+        title: "One-Click Publish",
+        description: "Approve the final cut and stream it directly to YouTube via API. No downloading heavy files back to your PC.",
+        icon: Youtube,
     },
 ];
 
@@ -97,7 +97,7 @@ export function HowItWorks() {
                         transition={{ delay: 0.3, duration: 0.8 }}
                         className="text-white/40 max-w-xl mx-auto text-[15px] font-light leading-relaxed"
                     >
-                        A streamlined 5-step workflow that keeps your channel secure while empowering your team.
+                        A completely autonomous AI workflow that edits and publishes your content while you sleep.
                     </motion.p>
                 </div>
 

@@ -6,24 +6,24 @@ import { cn } from "@/lib/utils";
 
 const features = [
     {
-        title: "Youtube API",
-        description: "Direct server-to-server publishing. No downloads required.",
+        title: "Autonomous AI Agent",
+        description: "AI automatically cuts mistakes, silences, and retakes. Zero manual editing required.",
         icon: Zap,
     },
     {
-        title: "Role-Based Access",
-        description: "Granular permissions for editors, managers, and viewers.",
-        icon: Lock,
-    },
-    {
-        title: "Secure Storage",
-        description: "Enterprise-grade encryption for all your raw footage.",
+        title: "Unified Workspace",
+        description: "No more scattered apps. Manage raw files, chats, and edits natively in one platform.",
         icon: Shield,
     },
     {
-        title: "1-Click Approvals",
-        description: "Review streams instantly and approve from any device.",
+        title: "Direct YT Publishing",
+        description: "Push final cuts straight to YouTube. No downloading heavy 10GB raw files again.",
         icon: MousePointer2,
+    },
+    {
+        title: "Creator Marketplace",
+        description: "Access verified freelance editors securely when you need advanced cinematic edits.",
+        icon: Lock,
     }
 ];
 
