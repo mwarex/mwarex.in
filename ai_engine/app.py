@@ -10,7 +10,8 @@ from urllib.parse import urlparse
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv()  # Cloud: reads from container env vars
+load_dotenv(os.path.join(os.path.dirname(__file__), '../backend/.env'))  # Local dev: reads from backend/.env
 
 app = Flask(__name__)
 
