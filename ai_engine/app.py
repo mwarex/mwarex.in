@@ -180,7 +180,8 @@ def process_video_background(video_id, file_url, ai_prompt):
             }
             requests.post(webhook_url, json=payload)
         except Exception as fallback_e:
-            report_progress(video_id, 0, f"Systems Failure: {str(fallback_e).replace('\n', ' ')[:30]}")
+            err_msg = str(fallback_e).replace('\n', ' ')[:30]
+            report_progress(video_id, 0, f"Systems Failure: {err_msg}")
             print(f"[AI AGENT] Fallback completely failed: {fallback_e}")
             webhook_url = f"{NODE_API_URL}/api/v1/videos/{video_id}/ai-callback"
             requests.post(webhook_url, json={"status": "failed", "message": f"Processing failed: {str(fallback_e)}"})
