@@ -100,6 +100,7 @@ export default function CreatorDashboard() {
   });
   const [rejectionReason, setRejectionReason] = useState("");
   const [aiProgressMap, setAiProgressMap] = useState<Record<string, { percent: number, message: string }>>({});
+  const [ytProgressMap, setYtProgressMap] = useState<Record<string, { percent: number, message: string }>>({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'general' | 'aiConfig' | 'models' | 'integrations'>('general');
 
@@ -436,11 +437,22 @@ export default function CreatorDashboard() {
           }));
         }
       };
+      const handleYoutubeProgress = (data: any) => {
+        if (data.videoId && data.percent !== undefined) {
+          setYtProgressMap(prev => ({
+            ...prev,
+            [data.videoId]: { percent: data.percent, message: data.message || "Publishing..." }
+          }));
+        }
+      };
+
       socket.on("video_progress", handleVideoProgress);
+      socket.on("youtube_progress", handleYoutubeProgress);
 
       return () => {
         events.forEach(evt => socket.off(evt, handleVideoEvent));
         socket.off("video_progress", handleVideoProgress);
+        socket.off("youtube_progress", handleYoutubeProgress);
       };
     }
   }, [currentRoom]);
@@ -830,6 +842,67 @@ export default function CreatorDashboard() {
               <p className="text-xs text-muted-foreground mt-1">Editing Tools</p>
             </motion.div>
           </motion.div>
+
+          {/* YouTube Publishing Live Banner */}
+          {Object.keys(ytProgressMap).length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              className="mb-6"
+            >
+              {Object.entries(ytProgressMap).map(([videoId, progress]) => {
+                const processingVideo = videos.find(v => v._id === videoId);
+                const isComplete = progress.percent === 100;
+                
+                return (
+                  <div
+                    key={videoId}
+                    className="relative overflow-hidden rounded-xl border border-red-500/30 bg-gradient-to-r from-red-500/5 via-rose-500/5 to-orange-500/5 p-4 md:p-5 mb-3"
+                  >
+                    {!isComplete && <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-rose-500/10 to-red-500/10 animate-pulse opacity-30" />}
+                    
+                    <div className="relative flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center shrink-0">
+                        {isComplete ? (
+                           <CheckCircle className="w-6 h-6 text-red-500" />
+                        ) : (
+                           <Youtube className="w-6 h-6 text-red-500 animate-pulse" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold text-foreground">
+                              {isComplete ? "YouTube Publishing Complete" : "YouTube Publishing Active"}
+                            </h3>
+                            {!isComplete && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
+                          </div>
+                          <motion.span animate={{ scale: isComplete ? [1, 1.2, 1] : 1 }} transition={{ duration: 0.5 }} className="text-lg font-bold text-red-500">
+                             {isComplete ? "Done!" : `${progress.percent}%`}
+                          </motion.span>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate mb-2">
+                          {processingVideo?.title || "Video"} — {isComplete ? "Congratulations! Your video is successfully published to YouTube 🎉" : progress.message}
+                        </p>
+                        
+                        {!isComplete && (
+                          <div className="w-full h-2 bg-secondary/80 rounded-full overflow-hidden">
+                            <motion.div
+                              className="h-full rounded-full bg-gradient-to-r from-red-500 via-rose-500 to-orange-500"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progress.percent}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </motion.div>
+          )}
 
           {/* AI Processing Live Banner */}
           {Object.keys(aiProgressMap).length > 0 && (

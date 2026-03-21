@@ -48,6 +48,7 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+global.io = io;
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);

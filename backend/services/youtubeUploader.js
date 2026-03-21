@@ -19,6 +19,13 @@ async function uploadToYoutube(video, userId) {
       streamUrl = await getSignedDownloadUrl(key);
     }
 
+    const streamReq = await axios({
+      method: "get",
+      url: streamUrl,
+      responseType: "stream",
+    });
+    const contentLength = parseInt(streamReq.headers['content-length'] || "0", 10);
+
     const res = await youtube.videos.insert({
       part: "snippet,status",
       requestBody: {
@@ -31,12 +38,19 @@ async function uploadToYoutube(video, userId) {
         },
       },
       media: {
-        body: (await axios({
-          method: "get",
-          url: streamUrl,
-          responseType: "stream",
-        })).data,
+        body: streamReq.data,
       },
+    }, {
+      onUploadProgress: (evt) => {
+        if (contentLength > 0 && global.io && video.roomId) {
+          const progress = Math.min(Math.round((evt.bytesRead / contentLength) * 100), 99);
+          global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
+            videoId: video._id.toString(),
+            percent: progress,
+            message: "Pushing HD chunks to YouTube Servers..."
+          });
+        }
+      }
     });
 
   if (video.thumbnailUrl) {
@@ -56,6 +70,14 @@ async function uploadToYoutube(video, userId) {
     } catch (err) {
       console.error("Thumbnail upload failed:", err.message);
     }
+  }
+
+  if (global.io && video.roomId) {
+    global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
+      videoId: video._id.toString(),
+      percent: 100,
+      message: "Congratulations! Video published."
+    });
   }
 
   return res.data;
