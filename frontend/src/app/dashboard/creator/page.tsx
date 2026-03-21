@@ -32,7 +32,8 @@ import {
   Send,
   ChevronDown,
   Briefcase,
-  Bot
+  Bot,
+  Sparkles
 } from "lucide-react";
 import VideoCard from "@/components/VideoCard";
 import { videoAPI, inviteAPI, getGoogleAuthUrl, paymentAPI, userAPI, roomAPI } from "@/lib/api";
@@ -47,6 +48,7 @@ import { SeasonSwitcher } from "@/components/seasonal-background";
 import { toast } from "sonner";
 import { S3UploadModal } from "@/components/S3UploadModal";
 import CreatorProjectsView from "@/components/CreatorProjectsView";
+import FutureFeatures from "@/components/FutureFeatures";
 
 interface Video {
   _id: string;
@@ -66,7 +68,7 @@ export default function CreatorDashboard() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"pending" | "all" | "raw_uploaded">("pending");
-  const [activeView, setActiveView] = useState<"dashboard" | "marketplace">("dashboard");
+  const [activeView, setActiveView] = useState<"dashboard" | "marketplace" | "future">("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -630,6 +632,14 @@ export default function CreatorDashboard() {
             <span>Integrations</span>
           </a>
 
+          <button
+            onClick={() => { setActiveView("future"); setIsSidebarOpen(false); }}
+            className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors", activeView === "future" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Future Features</span>
+          </button>
+
           <div className="my-4 border-t border-border" />
 
           <button
@@ -715,6 +725,10 @@ export default function CreatorDashboard() {
         </header>
 
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          {activeView === "future" ? (
+            <FutureFeatures />
+          ) : (
+          <>
           {/* Demo Mode Banner */}
           {isDemo && (
             <motion.div
@@ -1100,6 +1114,8 @@ export default function CreatorDashboard() {
                 Upload New Video
               </button>
             </motion.div>
+          )}
+          </>
           )}
         </div>
       </main>
