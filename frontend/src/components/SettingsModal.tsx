@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Settings, Bot, Youtube, Box, CheckCircle2, Shield, User, Loader2 } from "lucide-react";
+import { X, Settings, Bot, Youtube, Box, CheckCircle2, Shield, User, Loader2, Zap, Brain, Sparkles, Clock, BarChart3, Cpu, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getGoogleAuthUrl } from "@/lib/api";
 
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
     initialTab?: 'general' | 'aiConfig' | 'models' | 'integrations';
+    userData?: { name?: string; email?: string } | null;
 }
 
-export default function SettingsModal({ isOpen, onClose, initialTab = 'general' }: SettingsModalProps) {
+export default function SettingsModal({ isOpen, onClose, initialTab = 'general', userData }: SettingsModalProps) {
     const [activeTab, setActiveTab] = useState(initialTab);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -53,7 +55,7 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
 
                         <button
                             onClick={() => setActiveTab('aiConfig')}
-                            className={cn("flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", activeTab === 'aiConfig' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+                            className={cn("flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer", activeTab === 'aiConfig' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
                         >
                             <Bot className="w-4 h-4" />
                             AI Brain Setup
@@ -61,7 +63,7 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
 
                         <button
                             onClick={() => setActiveTab('models')}
-                            className={cn("flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", activeTab === 'models' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+                            className={cn("flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer", activeTab === 'models' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
                         >
                             <Box className="w-4 h-4" />
                             AI Models & Engines
@@ -84,7 +86,7 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                     <div className="flex-1 flex flex-col relative overflow-hidden bg-background">
                         <div className="flex items-center justify-between p-4 border-b border-border bg-card/50 px-6 shrink-0">
                             <h2 className="text-lg font-semibold capitalize tracking-wide text-foreground">
-                                {activeTab === 'aiConfig' ? "AI Brain Settings" : activeTab === 'models' ? "Model Selection" : activeTab}
+                                {activeTab === 'aiConfig' ? "AI Brain Settings" : activeTab === 'models' ? "AI Processing Pipeline" : activeTab === 'integrations' ? "Connected Services" : "General"}
                             </h2>
                             <button
                                 onClick={onClose}
@@ -101,8 +103,8 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                     <div className="space-y-4">
                                         <h3 className="text-base font-semibold text-foreground flex items-center gap-2"><User className="w-4 h-4 text-primary"/> Account Profile</h3>
                                         <div className="p-4 bg-secondary/30 rounded-xl border border-border">
-                                            <p className="text-sm text-foreground">Name: <span className="text-muted-foreground">MWareX Creator</span></p>
-                                            <p className="text-sm text-foreground mt-2">Email: <span className="text-muted-foreground">creator@mwarex.in</span></p>
+                                            <p className="text-sm text-foreground">Name: <span className="text-muted-foreground">{userData?.name || 'Creator'}</span></p>
+                                            <p className="text-sm text-foreground mt-2">Email: <span className="text-muted-foreground">{userData?.email || 'Not set'}</span></p>
                                         </div>
                                     </div>
                                     <div className="space-y-4">
@@ -156,47 +158,114 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                 </div>
                             )}
 
-                            {/* AI Models */}
+                            {/* AI Models & Pipeline */}
                             {activeTab === 'models' && (
-                                <div className="max-w-xl space-y-6 animate-in fade-in zoom-in-95 duration-300">
-                                    <h3 className="text-base font-semibold text-foreground">Active Processing Engines</h3>
-                                    <p className="text-sm text-muted-foreground">Manage the active AI engines designated for your workspace pipeline. Premium plans unlock secondary concurrent models.</p>
-                                    
-                                    <div className="flex flex-col gap-3">
-                                        <div className="relative overflow-hidden group border border-primary/40 bg-primary/5 rounded-xl p-5 cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer] transition-all hover:border-primary">
-                                            <div className="absolute top-0 right-0 p-4">
-                                                <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary px-2 py-1 rounded-md">Active Default</span>
-                                            </div>
-                                            <div className="flex items-center gap-4 mb-2">
-                                                <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                                                    <Bot className="w-5 h-5 text-indigo-400" />
+                                <div className="max-w-2xl space-y-6 animate-in fade-in zoom-in-95 duration-300">
+                                    {/* Pipeline Info */}
+                                    <div>
+                                        <h3 className="text-base font-semibold text-foreground mb-1">AI Video Processing Pipeline</h3>
+                                        <p className="text-sm text-muted-foreground">Your videos are processed through a multi-stage AI pipeline. Each stage uses specialized models for optimal results.</p>
+                                    </div>
+
+                                    {/* Pipeline Steps */}
+                                    <div className="space-y-3">
+                                        <div className="p-4 border border-indigo-500/30 bg-indigo-500/5 rounded-xl">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center shrink-0">
+                                                    <Brain className="w-5 h-5 text-indigo-400" />
                                                 </div>
-                                                <div>
-                                                    <h4 className="font-semibold text-foreground">Gemini 2.5 Flash</h4>
-                                                    <p className="text-xs text-muted-foreground">High-Speed Context Reasoning Engine</p>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h4 className="font-semibold text-foreground text-sm">Stage 1 — Content Analysis</h4>
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-md">Gemini 2.5 Flash</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">Analyzes video frames, audio patterns, and speech to understand context. Identifies silences, mistakes, stutters, and B-roll segments.</p>
+                                                    <div className="flex items-center gap-4 mt-3">
+                                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                            <Clock className="w-3 h-3" />
+                                                            <span>~30s per minute of video</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-xs text-emerald-500">
+                                                            <Zap className="w-3 h-3" />
+                                                            <span>Active</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <p className="text-[13px] text-muted-foreground leading-relaxed mt-3">
-                                                Currently powering conversational chat, title generation, and iterative fallback logic inference. Unmatched latency-to-quality ratio.
-                                            </p>
                                         </div>
 
-                                        <div className="relative overflow-hidden group border border-border bg-card/50 rounded-xl p-5 opacity-70 cursor-not-allowed">
-                                            <div className="absolute top-0 right-0 p-4">
-                                                <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-500/10 text-orange-500 border border-orange-500/20 px-2 py-1 rounded-md">Pro Feature</span>
-                                            </div>
-                                            <div className="flex items-center gap-4 mb-2">
-                                                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                                                    <Bot className="w-5 h-5 text-emerald-400" />
+                                        <div className="flex justify-center">
+                                            <div className="w-px h-4 bg-border" />
+                                        </div>
+
+                                        <div className="p-4 border border-violet-500/30 bg-violet-500/5 rounded-xl">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+                                                    <Sparkles className="w-5 h-5 text-violet-400" />
                                                 </div>
-                                                <div>
-                                                    <h4 className="font-semibold text-foreground">OpenAI GPT-4 Omni</h4>
-                                                    <p className="text-xs text-muted-foreground">Deep multimodal analysis</p>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h4 className="font-semibold text-foreground text-sm">Stage 2 — Intelligent Editing</h4>
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-md">FFMPEG Engine</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">Uses AI-generated timestamps to cut, trim, and stitch video segments. Preserves cinematic B-roll and removes unwanted parts.</p>
+                                                    <div className="flex items-center gap-4 mt-3">
+                                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                            <Cpu className="w-3 h-3" />
+                                                            <span>Hardware-accelerated</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-xs text-emerald-500">
+                                                            <Zap className="w-3 h-3" />
+                                                            <span>Active</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <p className="text-[13px] text-muted-foreground leading-relaxed mt-3">
-                                                Unlocks frame-by-frame deep semantic analysis and granular vision embeddings for complex vlog structures.
-                                            </p>
+                                        </div>
+
+                                        <div className="flex justify-center">
+                                            <div className="w-px h-4 bg-border" />
+                                        </div>
+
+                                        <div className="p-4 border border-amber-500/30 bg-amber-500/5 rounded-xl">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                                                    <Bot className="w-5 h-5 text-amber-400" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h4 className="font-semibold text-foreground text-sm">Stage 3 — AI Chat Assistant</h4>
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-md">Gemini Pro</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">Conversational AI that understands your editing preferences. Ask for re-edits, suggest changes, or get content recommendations in natural language.</p>
+                                                    <div className="flex items-center gap-4 mt-3">
+                                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                            <BarChart3 className="w-3 h-3" />
+                                                            <span>Context-aware memory</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-xs text-emerald-500">
+                                                            <Zap className="w-3 h-3" />
+                                                            <span>Active</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Coming Soon */}
+                                    <div className="p-4 border border-border bg-card/50 rounded-xl opacity-60">
+                                        <div className="flex items-start gap-4">
+                                            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                                                <Lock className="w-5 h-5 text-muted-foreground" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h4 className="font-semibold text-foreground text-sm">GPT-4 Vision + DALL·E 3</h4>
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-500/10 text-orange-500 border border-orange-500/20 px-2 py-0.5 rounded-md">Coming Soon</span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground leading-relaxed">Auto-generate thumbnails, titles, and descriptions using GPT-4 Vision analysis with DALL·E 3 creative generation.</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -212,10 +281,13 @@ export default function SettingsModal({ isOpen, onClose, initialTab = 'general' 
                                             </div>
                                             <div>
                                                 <h4 className="font-semibold text-foreground tracking-wide">YouTube Auto-Publish</h4>
-                                                <p className="text-xs text-muted-foreground mt-0.5">Push approved AI edits standardly to studio.</p>
+                                                <p className="text-xs text-muted-foreground mt-0.5">Push approved AI edits directly to your YouTube channel.</p>
                                             </div>
                                         </div>
-                                        <button className="px-4 py-1.5 rounded-lg border border-border bg-secondary text-sm font-medium hover:bg-secondary/70 transition-colors">
+                                        <button
+                                            onClick={() => window.location.href = getGoogleAuthUrl()}
+                                            className="px-4 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 text-sm font-medium hover:bg-red-500/20 transition-colors"
+                                        >
                                             Connect
                                         </button>
                                     </div>

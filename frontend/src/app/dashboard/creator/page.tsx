@@ -831,6 +831,55 @@ export default function CreatorDashboard() {
             </motion.div>
           </motion.div>
 
+          {/* AI Processing Live Banner */}
+          {Object.keys(aiProgressMap).length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              className="mb-6"
+            >
+              {Object.entries(aiProgressMap).map(([videoId, progress]) => {
+                const processingVideo = videos.find(v => v._id === videoId);
+                return (
+                  <div
+                    key={videoId}
+                    className="relative overflow-hidden rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/5 via-violet-500/5 to-purple-500/5 p-4 md:p-5"
+                  >
+                    {/* Animated background pulse */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-violet-500/10 to-indigo-500/10 animate-pulse opacity-30" />
+                    
+                    <div className="relative flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+                        <Bot className="w-6 h-6 text-indigo-400 animate-pulse" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold text-foreground">AI Processing Active</h3>
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          </div>
+                          <span className="text-lg font-bold text-indigo-400">{progress.percent}%</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate mb-2">
+                          {processingVideo?.title || "Video"} — {progress.message}
+                        </p>
+                        <div className="w-full h-2 bg-secondary/80 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progress.percent}%` }}
+                            transition={{ duration: 0.5, ease: "easeOut" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </motion.div>
+          )}
+
           {/* Filters & Search */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1311,7 +1360,8 @@ export default function CreatorDashboard() {
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
-        initialTab={settingsTab} 
+        initialTab={settingsTab}
+        userData={userData}
       />
 
       <SubscriptionModal
