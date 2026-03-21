@@ -23,7 +23,7 @@ const videoSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["pending", "approved", "rejected", "uploaded", "processing", "upload_failed", "raw_uploaded", "raw_rejected", "editing_in_progress"],
+    enum: ["pending", "approved", "rejected", "uploaded", "processing", "upload_failed", "raw_uploaded", "raw_rejected", "editing_in_progress", "ai_processing"],
     default: "pending",
   },
   rejectionReason: String,
@@ -42,6 +42,7 @@ const videoSchema = new mongoose.Schema({
   comments: [{
     senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     text: String,
+    isAI: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
   }],
 
@@ -54,6 +55,11 @@ const videoSchema = new mongoose.Schema({
     trimStart: { type: Number, default: 0 },
     trimEnd: { type: Number, default: 0 },
   },
+
+  aiProgress: {
+    percent: { type: Number, default: 0 },
+    message: { type: String, default: "" }
+  }
 }, { timestamps: true });
 
 const videoModel = mongoose.models.Video || mongoose.model("Video", videoSchema);

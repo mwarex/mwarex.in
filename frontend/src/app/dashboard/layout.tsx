@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { SeasonalBackground } from "@/components/seasonal-background";
 import { useSeason } from "@/contexts/SeasonContext";
 
+import AIChatBot from "@/components/AIChatBot";
+
 function DashboardSeasonInit() {
     const { season, setSeason } = useSeason();
 
@@ -13,7 +15,7 @@ function DashboardSeasonInit() {
         if (!saved || saved === 'none') {
             setSeason('autumn');
         }
-    }, []);
+    }, [setSeason]);
 
     return null;
 }
@@ -67,6 +69,9 @@ export default function DashboardLayout({
             <div className="relative" style={{ zIndex: 10 }}>
                 {children}
             </div>
+
+            {/* Global Floating AI Chat Widget */}
+            <AIChatBot />
         </div>
     );
 }

@@ -22,7 +22,8 @@ import {
   ArrowRight,
   Lock,
   DollarSign,
-  Wand2
+  Wand2,
+  Briefcase
 } from "lucide-react";
 import VideoCard from "@/components/VideoCard";
 import { videoAPI, aiAPI, paymentAPI, roomAPI } from "@/lib/api";
@@ -34,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { SeasonSwitcher } from "@/components/seasonal-background";
 import { toast } from "sonner";
 import { S3UploadModal } from "@/components/S3UploadModal";
+import EditorMarketplaceView from "@/components/EditorMarketplaceView";
 
 interface Video {
   _id: string;
@@ -59,6 +61,7 @@ export default function EditorDashboard() {
   const [isDemo, setIsDemo] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [activeView, setActiveView] = useState<"dashboard" | "marketplace">("dashboard");
 
   // Room State
   const [rooms, setRooms] = useState<{ _id: string; name: string }[]>([]);
@@ -433,6 +436,18 @@ export default function EditorDashboard() {
               <Sparkles className="w-4 h-4" />
               <span className="hidden md:inline">AI Studio</span>
             </button>
+            <button
+               onClick={() => setActiveView("dashboard")}
+               className={cn("p-2 rounded-lg font-medium text-sm transition-colors", activeView === "dashboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+            >
+               <LayoutDashboard className="w-4 h-4" />
+            </button>
+            <button
+               onClick={() => setActiveView("marketplace")}
+               className={cn("p-2 rounded-lg font-medium text-sm transition-colors", activeView === "marketplace" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+            >
+               <Briefcase className="w-4 h-4" />
+            </button>
             <SeasonSwitcher />
             <button
               onClick={() => router.push("/dashboard/editor/settings")}
@@ -597,6 +612,8 @@ export default function EditorDashboard() {
           </motion.div>
         </motion.div>
 
+        {activeView === "marketplace" ? null : (
+          <>
         {/* Content Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -689,6 +706,8 @@ export default function EditorDashboard() {
               )}
             </section>
           </div>
+        )}
+        </>
         )}
       </main>
 

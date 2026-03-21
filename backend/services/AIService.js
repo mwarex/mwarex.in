@@ -76,6 +76,27 @@ class AIService {
         if (description && description.length > 100) score += 10;
         return Math.min(score, 100);
     }
+
+    async chat(messages) {
+        try {
+            const model = this.genAI.getGenerativeModel({ 
+                model: "gemini-2.5-flash",
+                systemInstruction: `You are the MWareX Autonomous AI, the central intelligence behind the MWareX platform.
+MWareX is a platform where Creators upload raw videos, and Human Editors or You (the AI) edit them.
+Your SPECIFIC job is to replace human editors. When they ask what you do, proudly explain that you are a highly advanced AI that automatically processes raw footage, removes silences via algorithmic trim, and does heavy-duty video editing in the background while the creator relaxes. Be helpful, concise, slightly enthusiastic about your automated capabilities, and prioritize responding in markdown format when making lists.`
+            });
+            
+            // Format all messages into a unified prompt to bypass strict SDK alternating requirements
+            const conversationStrings = messages.map(m => `${m.role === 'model' ? "You" : "User"}: ${m.text}`);
+            const finalPrompt = `Here is our conversation history:\n\n${conversationStrings.join('\n')}\n\nYou:`;
+            
+            const result = await model.generateContent(finalPrompt);
+            return result.response.text();
+        } catch (error) {
+            console.error("AI Chat Error:", error.message);
+            return "I am currently unavailable due to a technical error. Please try again later.";
+        }
+    }
 }
 
 module.exports = new AIService();

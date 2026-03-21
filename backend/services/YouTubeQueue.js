@@ -58,8 +58,23 @@ try {
     );
 
     worker.on("completed", (job, result) => console.log(`[YouTubeQueue] Job ${job.id} done:`, result));
-    worker.on("failed",    (job, err)    => console.error(`[YouTubeQueue] Job ${job?.id} failed:`, err.message));
-    worker.on("error",     (err)         => console.error("[YouTubeQueue] Worker error:", err.message));
+    worker.on("failed", async (job, err) => {
+        console.error(`[YouTubeQueue] Job ${job?.id} failed:`, err.message);
+        try {
+            const videoId = job?.data?.videoId;
+            if (videoId) {
+                const video = await VideoRepository.findById(videoId);
+                if (video && video.status === "processing") {
+                    video.status = "approved"; // Revert to Approved so user can retry
+                    video.rejectionReason = `YouTube Auth/Upload Error: ${err.message}`;
+                    await video.save();
+                }
+            }
+        } catch (e) {
+            console.error("Could not rollback video state on YT fail:", e.message);
+        }
+    });
+    worker.on("error", (err) => console.error("[YouTubeQueue] Worker error:", err.message));
 
     console.log("[YouTubeQueue] ✅ Queue & Worker initialized");
 } catch (err) {

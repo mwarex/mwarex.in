@@ -34,11 +34,11 @@ class VideoRepository extends BaseRepository {
         );
     }
 
-    async addComment(videoId, senderId, text) {
+    async addComment(videoId, senderId, text, isAI = false) {
         const video = await this.model.findById(videoId);
         if (!video) return null;
 
-        video.comments.push({ senderId, text, createdAt: new Date() });
+        video.comments.push({ senderId, text, isAI, createdAt: new Date() });
         await video.save();
 
         return this.model

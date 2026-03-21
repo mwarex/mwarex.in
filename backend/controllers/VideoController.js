@@ -139,6 +139,42 @@ class VideoController extends BaseController {
                     role: req.role,
                     userId: req.userId,
                 });
+                
+                // ── AI AGENT INTEGRATION: Send raw video to Python Engine ──
+                if (!editorId) {
+                    try {
+                        let aiSuccess = false;
+                        const pythonUrl = process.env.PYTHON_API_URL || "http://localhost:5001";
+                        if (global.fetch) {
+                            try {
+                                await global.fetch(`${pythonUrl}/process_video`, {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        videoId: video._id,
+                                        fileUrl: video.rawFileUrl || video.fileUrl,
+                                        aiPrompt: description || "Auto Edit"
+                                    })
+                                });
+                                aiSuccess = true;
+                            } catch (netErr) {
+                                console.error("AI Engine network err:", netErr.message);
+                                video.status = "raw_rejected";
+                                video.rejectionReason = "AI Processor Offline: Ensure your Python server is running on port 5001";
+                                await video.save();
+                            }
+                        }
+                        
+                        if (aiSuccess) {
+                            video.status = "ai_processing";
+                            video.aiProgress = { percent: 0, message: "Connected to AI Engine instance..." };
+                            await video.save();
+                        }
+                    } catch(aiError) {
+                        console.error("Failed to trigger AI Agent", aiError);
+                    }
+                }
+                
             } else {
                 video = await this.videoService.uploadVideo({
                     file: fakeFile,
@@ -159,11 +195,93 @@ class VideoController extends BaseController {
         }
     }
 
+    async aiProgress(req, res) {
+        try {
+            const { percent, message } = req.body;
+            const VideoModel = require("../models/video");
+            const video = await VideoModel.findById(req.params.id);
+            
+            if (!video) return this.notFound(res, "Video not found");
+            
+            // Persist the progress state in DB
+            video.aiProgress = { percent, message };
+            await video.save();
+            
+            const roomId = video.roomId || req.body.roomId;
+            if (req.io && roomId) {
+                req.io.to(`room_${roomId}`).emit("video_progress", { videoId: video._id, percent, message });
+            }
+            
+            return this.success(res, { message: "Progress updated" });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    async aiCallback(req, res) {
+        try {
+            const { status, editedFileUrl, message } = req.body;
+            // Get raw context access from mongoose Model
+            const VideoModel = require("../models/video");
+            const video = await VideoModel.findById(req.params.id);
+            
+            if (!video) return this.notFound(res, "Video not found");
+            
+            if (status === "failed") {
+                video.status = "raw_rejected";
+                video.rejectionReason = "AI Analysis Failed: " + message;
+            } else {
+                video.status = "pending";
+                if (editedFileUrl) {
+                    video.fileUrl = editedFileUrl;
+                }
+            }
+            
+            await video.save();
+            this.emitVideoUpdate(req, video, "video_updated");
+            
+            return this.success(res, { message: "AI processing successfully applied to video." });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
     async reject(req, res) {
         try {
             const video = await this.videoService.rejectVideo(req.params.id, req.body.reason);
 
             this.emitVideoUpdate(req, video, "video_rejected");
+
+            // --- AI RE-EDIT TRIGGER ---
+            if (!video.editorId) {
+                const pythonUrl = process.env.PYTHON_API_URL || "http://localhost:5001";
+                
+                try {
+                    const populatedVideo = await this.videoService.getVideoById(video._id);
+                    const chatHistory = populatedVideo.comments.map(c => `${c.isAI ? 'AI Editor' : 'Creator'}: ${c.text}`).join('\n');
+                    const rejectionReason = req.body.reason || "Re-edit requested";
+                    
+                    const newAIPrompt = `Original Instructions: ${video.description}\nChat History over this video:\n${chatHistory}\nCreator's final rejection reason: ${rejectionReason}. \nCRITICAL: Adjust the cuts or fix mistakes based strictly on their new feedback.`;
+                    
+                    if (global.fetch) {
+                        global.fetch(`${pythonUrl}/process_video`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                videoId: video._id,
+                                fileUrl: video.rawFileUrl || video.fileUrl,
+                                aiPrompt: newAIPrompt
+                            })
+                        }).catch(err => console.error("AI Engine network err:", err.message));
+                    }
+                    
+                    video.status = "ai_processing";
+                    await video.save();
+                    this.emitVideoUpdate(req, video, "video_updated");
+                } catch(aiError) {
+                    console.error("Failed to trigger iterative AI Agent", aiError);
+                }
+            }
 
             return this.success(res, { message: "Video Rejected" });
         } catch (err) {

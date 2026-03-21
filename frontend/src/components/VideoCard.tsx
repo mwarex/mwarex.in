@@ -32,13 +32,14 @@ interface VideoCardProps {
     title: string;
     description: string;
     fileUrl: string;
-    status: "pending" | "approved" | "rejected" | "uploaded" | "processing" | "raw_uploaded" | "raw_rejected" | "editing_in_progress";
+    status: "pending" | "approved" | "rejected" | "uploaded" | "processing" | "raw_uploaded" | "raw_rejected" | "editing_in_progress" | "ai_processing";
     creatorId?: string;
     editorId?: string | { _id: string; name: string; email: string };
     youtubeId?: string;
     rejectionReason?: string;
     editorRejectionReason?: string;
     rawFileUrl?: string;
+    aiProgress?: { percent: number; message: string; };
   };
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
@@ -50,6 +51,7 @@ interface VideoCardProps {
   isLoading?: boolean;
   onDeleteForMe?: (id: string) => void;
   onDeleteForEveryone?: (id: string) => void;
+  aiProgress?: { percent: number; message: string; };
 }
 
 export default function VideoCard({
@@ -64,6 +66,7 @@ export default function VideoCard({
   isLoading = false,
   onDeleteForMe,
   onDeleteForEveryone,
+  aiProgress
 }: VideoCardProps) {
   const router = useRouter();
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -136,6 +139,28 @@ export default function VideoCard({
 
   const videoUrl = getVideoUrl(currentVideoPath);
 
+  const [signedVideoUrl, setSignedVideoUrl] = useState<string>("");
+  const [isPlayingLoading, setIsPlayingLoading] = useState(false);
+
+  const handlePlayClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPlayingLoading(true);
+    try {
+      if (currentVideoPath?.includes("amazonaws.com")) {
+        const isRaw = (video.status === "raw_uploaded" || video.status === "editing_in_progress") && !!video.rawFileUrl;
+        const res = await s3API.getDownloadUrl(video._id, isRaw);
+        setSignedVideoUrl(res.data.signedUrl);
+      } else {
+        setSignedVideoUrl(getVideoUrl(currentVideoPath || ""));
+      }
+      setIsVideoModalOpen(true);
+    } catch (err) {
+      console.error("Failed to fetch signed url for playback", err);
+    } finally {
+      setIsPlayingLoading(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -163,13 +188,15 @@ export default function VideoCard({
       {/* Thumbnail / Video Preview Area */}
       <div
         className="relative aspect-video bg-muted/30 overflow-hidden cursor-pointer group/thumb rounded-t-2xl"
-        onClick={() => {
-          router.push(`/dashboard/video/${video._id}`);
-        }}
+        onClick={handlePlayClick}
       >
         <div className="absolute inset-0 flex items-center justify-center z-10 transition-transform duration-500 group-hover/thumb:scale-110">
           <div className="w-14 h-14 rounded-full bg-background/20 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover/thumb:bg-primary transition-colors shadow-2xl">
-            <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+            {isPlayingLoading ? (
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+            )}
           </div>
         </div>
 
@@ -224,6 +251,22 @@ export default function VideoCard({
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI Progress Overlay */}
+        {video.status === 'ai_processing' && (aiProgress || video.aiProgress) && (
+          <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-md p-3 z-30 border-t border-white/10">
+            <div className="flex justify-between items-center mb-1.5 text-[10px] sm:text-[11px] font-semibold text-white tracking-wide">
+              <span className="text-white/80 line-clamp-1 mr-2">{(aiProgress || video.aiProgress)?.message}</span>
+              <span className="text-primary whitespace-nowrap">{(aiProgress || video.aiProgress)?.percent}%</span>
+            </div>
+            <div className="w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="bg-primary h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(var(--primary),0.5)]"
+                style={{ width: `${(aiProgress || video.aiProgress)?.percent}%` }}
+              ></div>
             </div>
           </div>
         )}
@@ -428,7 +471,7 @@ export default function VideoCard({
                   controls
                   autoPlay
                   className="w-full aspect-video bg-black"
-                  src={videoUrl}
+                  src={signedVideoUrl}
                   onError={(e) => {
                     console.error("Video playback error", e);
                     setVideoError(true);

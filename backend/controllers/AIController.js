@@ -42,6 +42,19 @@ class AIController extends BaseController {
             return this.handleError(res, err);
         }
     }
+
+    async chat(req, res) {
+        try {
+            const { messages } = req.body;
+            if (!messages || !Array.isArray(messages) || messages.length === 0) {
+                return this.badRequest(res, "Messages array is required");
+            }
+            const reply = await this.aiService.chat(messages);
+            return this.success(res, { reply });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
 }
 
 module.exports = new AIController(AIService);

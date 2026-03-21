@@ -96,6 +96,7 @@ app.use("/api/v1/payment/crypto", cryptoRoutes);
 app.use("/api/v1/rooms", require("./routes/room"));
 app.use("/api/v1/feedback", require("./routes/feedback"));
 app.use("/api/v1/s3", require("./routes/s3"));
+app.use("/api/v1/marketplace", require("./routes/marketplace"));
 app.use("/auth", googleAuthRoutes);
 
 app.get("/health", (req, res) => {

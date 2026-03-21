@@ -392,18 +392,22 @@ export default function VideoStudioPage() {
                                     ) : (
                                         comments.map((msg, i) => {
                                             const isMe = msg.senderId?._id === userData?.id || msg.senderId === userData?.id;
+                                            const isAI = msg.isAI;
+                                            
                                             return (
                                                 <div key={i} className={cn("flex flex-col gap-1 max-w-[85%]", isMe ? "ml-auto items-end" : "items-start")}>
                                                     <div className={cn(
                                                         "px-3 lg:px-4 py-2 lg:py-2.5 rounded-2xl text-[13px] lg:text-sm",
                                                         isMe
-                                                            ? "bg-primary text-primary-foreground rounded-br-none"
-                                                            : "bg-secondary text-foreground rounded-bl-none border border-border"
+                                                            ? "bg-primary text-primary-foreground rounded-br-none shadow-sm"
+                                                            : (isAI 
+                                                                ? "bg-indigo-500/10 text-indigo-300 rounded-bl-none border border-indigo-500/20 shadow-inner" 
+                                                                : "bg-secondary text-foreground rounded-bl-none border border-border")
                                                     )}>
                                                         {msg.text}
                                                     </div>
-                                                    <span className="text-[9px] lg:text-[10px] text-muted-foreground px-1">
-                                                        {msg.senderId?.name || "User"} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    <span className="text-[9px] lg:text-[10px] text-muted-foreground px-1 flex items-center gap-1">
+                                                        {isAI ? <><Settings2 className="w-2.5 h-2.5 text-indigo-400"/> AI Editor</> : (msg.senderId?.name || "User")} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
                                                 </div>
                                             );

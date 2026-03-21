@@ -240,7 +240,7 @@ class VideoService {
     }
 
     async addComment(videoId, senderId, text, io) {
-        const updatedVideo = await this.videoRepository.addComment(videoId, senderId, text);
+        let updatedVideo = await this.videoRepository.addComment(videoId, senderId, text);
         if (!updatedVideo) {
             throw { status: 404, message: "Video not found" };
         }
@@ -249,6 +249,41 @@ class VideoService {
 
         if (io) {
             io.to(`video_${videoId}`).emit("new_comment", newComment);
+        }
+
+        // --- AI EDITOR CHAT INTEGRATION ---
+        // If there is no human editor assigned, the AI Agent acts as the Editor
+        if (!updatedVideo.editorId) {
+            setTimeout(async () => {
+                try {
+                    const { GoogleGenerativeAI } = require("@google/generative-ai");
+                    if (!process.env.GEMINI_API_KEY) return;
+                    
+                    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+                    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+                    const chatHistory = updatedVideo.comments.map(c => `${c.isAI ? 'AI Editor' : 'Creator'}: ${c.text}`).join('\n');
+                    const prompt = `You are an expert AI Video Editor assisting a Creator on the MwareX platform.
+The creator is currently reviewing your recent edit of their video.
+Here is the chat history:
+${chatHistory}
+
+Respond to exactly what the creator just asked in a helpful, concise, professional and enthusiastic tone. 
+Acknowledge edits they want you to make differently (if any), and assure them you'll remember these details when they hit the "Reject & Re-edit" button. Reply cleanly without markdown codes.`;
+
+                    const result = await model.generateContent(prompt);
+                    const aiReply = result.response.text();
+
+                    const freshVideo = await this.videoRepository.addComment(videoId, null, aiReply, true);
+                    const aiComment = freshVideo.comments[freshVideo.comments.length - 1];
+
+                    if (io) {
+                        io.to(`video_${videoId}`).emit("new_comment", aiComment);
+                    }
+                } catch (aiError) {
+                    console.error("AI Chat Reply Error:", aiError);
+                }
+            }, 500); // Slight delay for realism
         }
 
         return updatedVideo.comments;

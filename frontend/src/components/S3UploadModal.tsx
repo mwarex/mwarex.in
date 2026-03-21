@@ -390,7 +390,7 @@ export function S3UploadModal({
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Description (optional)"
+                  placeholder="AI Prompt (e.g., 'Cut silences, make it cinematic, remove off-topic parts')"
                   disabled={isUploading}
                   className="w-full bg-secondary/30 border border-border focus:border-primary/50 rounded-lg px-3 py-2.5 text-sm outline-none transition-all resize-none focus:bg-background placeholder:text-muted-foreground/60 disabled:opacity-50"
                 />

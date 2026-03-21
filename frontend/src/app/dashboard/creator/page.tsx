@@ -31,7 +31,9 @@ import {
   Wand2,
   MessageSquare,
   Send,
-  ChevronDown
+  ChevronDown,
+  Briefcase,
+  Bot
 } from "lucide-react";
 import VideoCard from "@/components/VideoCard";
 import { videoAPI, inviteAPI, getGoogleAuthUrl, paymentAPI, userAPI, roomAPI } from "@/lib/api";
@@ -41,16 +43,18 @@ import { MWareXLogo } from "@/components/mwarex-logo";
 import { SubscriptionModal } from "@/components/subscription-modal";
 import { cn } from "@/lib/utils";
 import { DashboardOnboarding } from "@/components/onboarding";
+import SettingsModal from "@/components/SettingsModal";
 import { SeasonSwitcher } from "@/components/seasonal-background";
 import { toast } from "sonner";
 import { S3UploadModal } from "@/components/S3UploadModal";
+import CreatorProjectsView from "@/components/CreatorProjectsView";
 
 interface Video {
   _id: string;
   title: string;
   description: string;
   fileUrl: string;
-  status: "pending" | "approved" | "rejected" | "uploaded" | "raw_uploaded" | "raw_rejected" | "editing_in_progress";
+  status: "pending" | "approved" | "rejected" | "uploaded" | "raw_uploaded" | "raw_rejected" | "editing_in_progress" | "ai_processing";
   youtubeId?: string;
   rejectionReason?: string;
   editorRejectionReason?: string;
@@ -63,6 +67,7 @@ export default function CreatorDashboard() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"pending" | "all" | "raw_uploaded">("pending");
+  const [activeView, setActiveView] = useState<"dashboard" | "marketplace">("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -89,12 +94,14 @@ export default function CreatorDashboard() {
   const [newRoomName, setNewRoomName] = useState("");
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
 
-  // Rejection Modal State
   const [rejectModal, setRejectModal] = useState<{ isOpen: boolean; videoId: string | null }>({
     isOpen: false,
     videoId: null,
   });
   const [rejectionReason, setRejectionReason] = useState("");
+  const [aiProgressMap, setAiProgressMap] = useState<Record<string, { percent: number, message: string }>>({});
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<'general' | 'aiConfig' | 'models' | 'integrations'>('general');
 
   useEffect(() => {
     const data = getUserData();
@@ -361,9 +368,9 @@ export default function CreatorDashboard() {
         border: "border-amber-500/20",
       },
       {
-        label: "Active Requests",
-        value: videos.filter((v) => v.status === "raw_uploaded" || v.status === "editing_in_progress").length,
-        icon: VideoIcon,
+        label: "AI Processing",
+        value: videos.filter((v) => v.status === "raw_uploaded" || v.status === "ai_processing" || v.status === "editing_in_progress").length,
+        icon: Bot,
         color: "text-blue-500",
         bg: "bg-blue-500/10",
         border: "border-blue-500/20",
@@ -421,8 +428,19 @@ export default function CreatorDashboard() {
       const events = ["video_uploaded", "video_updated", "video_approved", "video_rejected", "video_accepted"];
       events.forEach(evt => socket.on(evt, handleVideoEvent));
 
+      const handleVideoProgress = (data: any) => {
+        if (data.videoId && data.percent !== undefined) {
+          setAiProgressMap(prev => ({
+            ...prev,
+            [data.videoId]: { percent: data.percent, message: data.message || "Processing..." }
+          }));
+        }
+      };
+      socket.on("video_progress", handleVideoProgress);
+
       return () => {
         events.forEach(evt => socket.off(evt, handleVideoEvent));
+        socket.off("video_progress", handleVideoProgress);
       };
     }
   }, [currentRoom]);
@@ -552,17 +570,23 @@ export default function CreatorDashboard() {
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           <p className="text-[10px] font-semibold text-muted-foreground px-3 mb-3 uppercase tracking-widest">Menu</p>
 
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm transition-colors cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]">
-            <LayoutDashboard className="w-4 h-4" />
-            <span>Dashboard</span>
+          <button 
+            onClick={() => setActiveView("dashboard")}
+            className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", activeView === "dashboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+          >
+           <LayoutDashboard className="w-4 h-4" />
+           <span>Dashboard</span>
           </button>
-
+          
           <button
-            onClick={() => { setIsInviteModalOpen(true); setIsSidebarOpen(false); }}
+            onClick={() => {
+              setSettingsTab('aiConfig');
+              setIsSettingsOpen(true);
+            }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
           >
-            <Users className="w-4 h-4" />
-            <span>Team Members</span>
+            <Bot className="w-4 h-4" />
+            <span>AI Brain Settings</span>
           </button>
 
           <a
@@ -576,7 +600,10 @@ export default function CreatorDashboard() {
           <div className="my-4 border-t border-border" />
 
           <button
-            onClick={() => router.push("/dashboard/creator/settings")}
+            onClick={() => {
+              setSettingsTab('general');
+              setIsSettingsOpen(true);
+            }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
           >
             <Settings className="w-4 h-4" />
@@ -642,11 +669,14 @@ export default function CreatorDashboard() {
               <span className="hidden sm:inline">Upload Raw</span>
             </button>
             <button
-              onClick={() => setIsInviteModalOpen(true)}
+              onClick={() => {
+                setSettingsTab('models');
+                setIsSettingsOpen(true);
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
             >
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Manage Team</span>
+              <Bot className="w-4 h-4" />
+              <span className="hidden sm:inline">AI Models</span>
             </button>
           </div>
         </header>
@@ -840,7 +870,7 @@ export default function CreatorDashboard() {
                     : "bg-secondary text-muted-foreground hover:text-foreground"
                 )}
               >
-                Active Requests
+                AI Processing
               </button>
               <button
                 onClick={() => setActiveTab("all")}
@@ -900,6 +930,7 @@ export default function CreatorDashboard() {
                       ? handleDeleteForEveryone
                       : undefined
                   }
+                  aiProgress={aiProgressMap[video._id]}
                 />
               ))}
             </motion.div>
@@ -919,11 +950,11 @@ export default function CreatorDashboard() {
                   : "Try adjusting your search filters."}
               </p>
               <button
-                onClick={() => setIsInviteModalOpen(true)}
+                onClick={() => setIsS3UploadOpen(true)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
               >
                 <Plus className="w-4 h-4" />
-                Invite Editor
+                Upload New Video
               </button>
             </motion.div>
           )}
@@ -1276,6 +1307,12 @@ export default function CreatorDashboard() {
           </div>
         )}
       </AnimatePresence>
+
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        initialTab={settingsTab} 
+      />
 
       <SubscriptionModal
         isOpen={isUpgradeModalOpen}

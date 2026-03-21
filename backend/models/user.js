@@ -40,6 +40,19 @@ const userSchema = new mongoose.Schema({
     endDate: { type: Date, default: null },
     paymentId: { type: String, default: null },
   },
+  creatorProfile: {
+    channelLink: { type: String, default: "" },
+    subscribers: { type: String, default: "" },
+    contentNiche: { type: String, default: "" },
+    budgetRange: { type: String, default: "" },
+    typeOfEditing: { type: String, default: "" },
+  },
+  editorProfile: {
+    skills: [{ type: String }],
+    editingStyles: [{ type: String }],
+    portfolioLinks: [{ type: String }],
+    pricePerVideo: { type: String, default: "" },
+  },
 });
 
 const userModel = mongoose.models.User || mongoose.model("User", userSchema);

@@ -111,6 +111,7 @@ export const aiAPI = {
   generateTitles: (data: { keywords: string }) => api.post("/api/v1/ai/generate-titles", data),
   generateThumbnails: (data: { topic: string }) => api.post("/api/v1/ai/generate-thumbnails", data),
   analyzeScore: (data: { title: string; description: string }) => api.post("/api/v1/ai/analyze-score", data),
+  chat: (data: { messages: { role: string; text: string }[] }) => api.post("/api/v1/ai/chat", data),
 };
 
 // User APIs
@@ -210,6 +211,25 @@ export const roomAPI = {
   get: (id: string) => api.get(`/api/v1/rooms/${id}`),
   verify: (token: string) => api.get(`/api/v1/rooms/verify/${token}`),
 };
+
+// Marketplace APIs
+export const marketplaceAPI = {
+  // Creator routes
+  createProject: (data: any) => api.post("/api/v1/marketplace/projects", data),
+  getCreatorProjects: () => api.get("/api/v1/marketplace/projects/my"),
+  getProjectApplications: (projectId: string) => api.get(`/api/v1/marketplace/projects/${projectId}/applications`),
+  acceptApplication: (applicationId: string) => api.post(`/api/v1/marketplace/applications/${applicationId}/accept`),
+  
+  // Editor routes
+  getMarketplaceProjects: (filters?: any) => api.get("/api/v1/marketplace/projects", { params: filters }),
+  applyToProject: (projectId: string, data: { pitchMessage: string, expectedPrice: number, email: string }) => api.post(`/api/v1/marketplace/projects/${projectId}/apply`, data),
+  getEditorApplications: () => api.get("/api/v1/marketplace/applications/my"),
+  
+  // Common/Chat routes
+  getApplicationMessages: (applicationId: string) => api.get(`/api/v1/marketplace/applications/${applicationId}/messages`),
+  sendMessage: (applicationId: string, content: string) => api.post(`/api/v1/marketplace/applications/${applicationId}/messages`, { content }),
+};
+
 
 // S3 Direct Upload APIs
 export const s3API = {
