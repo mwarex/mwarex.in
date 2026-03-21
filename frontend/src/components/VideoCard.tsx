@@ -19,14 +19,12 @@ import {
   Download,
   Upload,
   ArrowRight,
-  Trash2,
-  Bot,
-  Send
+  Trash2
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { s3API, videoAPI } from "@/lib/api";
+import { s3API } from "@/lib/api";
 
 interface VideoCardProps {
   video: {
@@ -41,9 +39,7 @@ interface VideoCardProps {
     rejectionReason?: string;
     editorRejectionReason?: string;
     rawFileUrl?: string;
-    thumbnailUrl?: string;
     aiProgress?: { percent: number; message: string; };
-    comments?: any[];
   };
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
@@ -76,51 +72,6 @@ export default function VideoCard({
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-
-  // AI Chat State
-  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<any[]>(video.comments || []);
-  const [chatInput, setChatInput] = useState("");
-  const [isSendingChat, setIsSendingChat] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isAIChatOpen) {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [chatMessages, isAIChatOpen]);
-
-  const handleChatToggle = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsAIChatOpen(!isAIChatOpen);
-    if (!isAIChatOpen && chatMessages.length === 0) {
-      try {
-        const res = await videoAPI.getVideo(video._id);
-        if (res.data.comments) setChatMessages(res.data.comments);
-      } catch (err) { }
-    }
-  };
-
-  const handleSendChat = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim() || isSendingChat) return;
-    setIsSendingChat(true);
-    
-    // Optimistic UI
-    const newMessage = { text: chatInput, isAI: false, createdAt: new Date().toISOString() };
-    setChatMessages(prev => [...prev, newMessage]);
-    const currentInput = chatInput;
-    setChatInput("");
-
-    try {
-      const res = await videoAPI.addComment(video._id, currentInput);
-      setChatMessages(res.data);
-    } catch (err) {
-      console.error("Failed to send chat", err);
-    } finally {
-      setIsSendingChat(false);
-    }
-  };
 
   const getStatusIcon = () => {
     switch (video.status) {
@@ -252,14 +203,10 @@ export default function VideoCard({
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-secondary to-muted opacity-50 transition-opacity group-hover/thumb:opacity-40" />
 
-        {/* Thumbnail Image or Placeholder */}
-        {video.thumbnailUrl ? (
-          <img src={video.thumbnailUrl} alt="Thumbnail Preview" className="absolute inset-0 w-full h-full object-cover z-0" />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-            <FileVideo className="w-20 h-20" />
-          </div>
-        )}
+        {/* Placeholder Icon if no thumbnail (could check if videoError here too if we tried to preload) */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+          <FileVideo className="w-20 h-20" />
+        </div>
 
         {/* Status Badge */}
         <div className="absolute top-3 left-3 z-20">
@@ -345,62 +292,6 @@ export default function VideoCard({
         )}
 
         <div className="mt-auto">
-          {/* AI Editor Chat UI */}
-          {showActions && video.status === "pending" && !video.editorId && (
-            <div className="mb-4">
-              <button 
-                onClick={handleChatToggle} 
-                className={cn("text-xs flex items-center gap-1.5 font-medium hover:underline transition-colors", isAIChatOpen ? "text-primary" : "text-muted-foreground hover:text-foreground")}
-              >
-                <Bot className="w-3.5 h-3.5" /> Discuss with AI Editor
-              </button>
-              
-              <AnimatePresence>
-                {isAIChatOpen && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }} 
-                    animate={{ height: 'auto', opacity: 1 }} 
-                    exit={{ height: 0, opacity: 0 }} 
-                    className="overflow-hidden mt-3"
-                  >
-                    <div className="bg-secondary/30 border border-border rounded-xl flex flex-col h-[200px]" onClick={e => e.stopPropagation()}>
-                      <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar text-xs">
-                        {chatMessages.length === 0 && (
-                          <div className="text-center text-muted-foreground py-4">
-                            Start a discussion about these edits. The AI will remember this when you reject for a re-edit.
-                          </div>
-                        )}
-                        {chatMessages.map((msg, idx) => (
-                          <div key={idx} className={cn("flex gap-2 max-w-[85%]", msg.isAI ? "self-start flex-row" : "ml-auto flex-row-reverse")}>
-                            <div className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center bg-secondary">
-                              {msg.isAI ? <Bot className="w-3 h-3 text-primary" /> : <div className="w-3 h-3 rounded-full bg-foreground/20" />}
-                            </div>
-                            <div className={cn("p-2 rounded-lg whitespace-pre-wrap flex-1", msg.isAI ? "bg-card border border-border" : "bg-primary/10 text-primary")}>
-                              {msg.text}
-                            </div>
-                          </div>
-                        ))}
-                        <div ref={chatEndRef} />
-                      </div>
-                      <form onSubmit={handleSendChat} className="p-2 border-t border-border flex items-center gap-2 bg-card">
-                        <input 
-                          type="text" 
-                          value={chatInput} 
-                          onChange={e => setChatInput(e.target.value)} 
-                          placeholder="Tell AI what to fix..." 
-                          className="flex-1 bg-transparent text-xs outline-none px-2" 
-                        />
-                        <button type="submit" disabled={isSendingChat || !chatInput.trim()} className="p-1.5 bg-primary text-primary-foreground rounded-md disabled:opacity-50">
-                          {isSendingChat ? <Loader2 className="w-3 h-3 animate-spin"/> : <Send className="w-3 h-3" />}
-                        </button>
-                      </form>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
           {/* Actions - Creator View */}
           {showActions && video.status === "pending" && (
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border/40">
