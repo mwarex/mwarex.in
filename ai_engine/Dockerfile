@@ -7,4 +7,4 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 5001
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5001", "app:app"]
+CMD ["gunicorn", "-w", "1", "--threads", "2", "--timeout", "300", "--max-requests", "50", "--max-requests-jitter", "10", "-b", "0.0.0.0:5001", "app:app"]

@@ -5,6 +5,7 @@ import threading
 import subprocess
 import boto3
 import json
+import gc
 import google.generativeai as genai
 from urllib.parse import urlparse
 from flask import Flask, request, jsonify
@@ -172,6 +173,7 @@ def process_video_background(video_id, file_url, ai_prompt):
     finally:
         if os.path.exists(input_file): os.remove(input_file)
         if os.path.exists(output_file): os.remove(output_file)
+        gc.collect()
         print("[AI AGENT: END] Cleanup complete.\n")
 
 
