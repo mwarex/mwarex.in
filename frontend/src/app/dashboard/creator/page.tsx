@@ -33,7 +33,8 @@ import {
   ChevronDown,
   Briefcase,
   Bot,
-  Sparkles
+  Sparkles,
+  Cpu
 } from "lucide-react";
 import VideoCard from "@/components/VideoCard";
 import { videoAPI, inviteAPI, getGoogleAuthUrl, paymentAPI, userAPI, roomAPI } from "@/lib/api";
@@ -49,6 +50,7 @@ import { toast } from "sonner";
 import { S3UploadModal } from "@/components/S3UploadModal";
 import CreatorProjectsView from "@/components/CreatorProjectsView";
 import FutureFeatures from "@/components/FutureFeatures";
+import AIPipeline from "@/components/AIPipeline";
 
 interface Video {
   _id: string;
@@ -68,7 +70,7 @@ export default function CreatorDashboard() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"pending" | "all" | "raw_uploaded">("pending");
-  const [activeView, setActiveView] = useState<"dashboard" | "marketplace" | "future">("dashboard");
+  const [activeView, setActiveView] = useState<"dashboard" | "marketplace" | "future" | "pipeline">("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -633,6 +635,14 @@ export default function CreatorDashboard() {
           </a>
 
           <button
+            onClick={() => { setActiveView("pipeline"); setIsSidebarOpen(false); }}
+            className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors", activeView === "pipeline" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+          >
+            <Cpu className="w-4 h-4" />
+            <span>AI Pipeline</span>
+          </button>
+
+          <button
             onClick={() => { setActiveView("future"); setIsSidebarOpen(false); }}
             className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors", activeView === "future" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
           >
@@ -727,6 +737,8 @@ export default function CreatorDashboard() {
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
           {activeView === "future" ? (
             <FutureFeatures />
+          ) : activeView === "pipeline" ? (
+            <AIPipeline />
           ) : (
           <>
           {/* Demo Mode Banner */}
