@@ -439,10 +439,32 @@ export default function CreatorDashboard() {
       };
       const handleYoutubeProgress = (data: any) => {
         if (data.videoId && data.percent !== undefined) {
+          // Update YouTube progress banner
           setYtProgressMap(prev => ({
             ...prev,
             [data.videoId]: { percent: data.percent, message: data.message || "Publishing..." }
           }));
+
+          // Remove from AI active banner immediately when YouTube upload starts
+          setAiProgressMap(prev => {
+            if (prev[data.videoId]) {
+              const newMap = { ...prev };
+              delete newMap[data.videoId];
+              return newMap;
+            }
+            return prev;
+          });
+
+          // Auto-remove the YouTube banner 6 seconds after completing
+          if (data.percent === 100) {
+            setTimeout(() => {
+              setYtProgressMap(prev => {
+                const newMap = { ...prev };
+                delete newMap[data.videoId];
+                return newMap;
+              });
+            }, 6000);
+          }
         }
       };
 
