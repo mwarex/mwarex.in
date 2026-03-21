@@ -43,10 +43,11 @@ def report_progress(video_id, percent, message):
     except:
         pass
 
+
 def process_video_background(video_id, file_url, ai_prompt):
     print(f"\n[AI AGENT: START] Processing video {video_id} with Gemini Multimodal AI")
-    input_file = f"raw_{video_id}.mp4"
-    output_file = f"edited_{video_id}.mp4"
+    input_file = f"/tmp/raw_{video_id}.mp4"
+    output_file = f"/tmp/edited_{video_id}.mp4"
     
     try:
         report_progress(video_id, 5, "Downloading high-res video from S3...")
@@ -110,7 +111,7 @@ def process_video_background(video_id, file_url, ai_prompt):
             segment_files = []
             
             for i, seg in enumerate(segments):
-                seg_file = f"temp_seg_{video_id}_{i}.mp4"
+                seg_file = f"/tmp/temp_seg_{video_id}_{i}.mp4"
                 segment_files.append(seg_file)
                 cmd = [
                     "ffmpeg", "-y",
@@ -124,7 +125,7 @@ def process_video_background(video_id, file_url, ai_prompt):
                 subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 
             # Concat
-            list_file = f"concat_list_{video_id}.txt"
+            list_file = f"/tmp/concat_list_{video_id}.txt"
             with open(list_file, "w") as f:
                 for s in segment_files:
                     f.write(f"file '{s}'\n")
