@@ -301,12 +301,8 @@ export function S3UploadModal({
 
       setPhase("done");
       toast.success(isRaw ? "Raw video uploaded! Editor can now see it." : "Edited video submitted!");
-
-      setTimeout(() => {
-        onSuccess();
-        handleClose();
-      }, 1800);
-
+      onSuccess();
+      handleClose();
     } catch (err: any) {
       if (err.message === "CANCELLED") {
         reset();
