@@ -167,7 +167,8 @@ def process_video_background(video_id, file_url, ai_prompt):
             
         try:
             report_progress(video_id, 60, "Running basic intelligent silence removal...")
-            subprocess.run(["auto-editor", input_file, "--margin", "0.2s", "-o", output_file], check=True)
+            subprocess.run(["auto-editor", input_file, "--margin", "0.2s", "-o", output_file], check=True, timeout=300)
+            report_progress(video_id, 80, "Silence removal complete. Preparing upload...")
             report_progress(video_id, 95, "Uploading Fast Fallback Edit back to AWS S3...")
             s3_key = f"ai_edits/{video_id}_fallback_{int(time.time())}.mp4"
             s3_client.upload_file(output_file, BUCKET_NAME, s3_key, ExtraArgs={'ContentType': 'video/mp4'})
