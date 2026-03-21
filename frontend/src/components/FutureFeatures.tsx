@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   Sparkles,
   Youtube,
@@ -79,7 +79,7 @@ export default function FutureFeatures() {
     show: {
       opacity: 1,
       y: 0,
-      transition: { type: "spring", stiffness: 400, damping: 30 },
+      transition: { type: "spring" as const, stiffness: 400, damping: 30 },
     },
   };
 
