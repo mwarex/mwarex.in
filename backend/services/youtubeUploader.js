@@ -10,48 +10,48 @@ async function uploadToYoutube(video, userId) {
     auth: oauth2Client,
   });
 
-    // Check if the URL is an S3 URL and get a signed download URL so axios can stream it
-    let streamUrl = video.fileUrl;
-    if (streamUrl && streamUrl.includes("amazonaws.com")) {
-      const { getSignedDownloadUrl } = require("./S3Service");
-      const urlObj = new URL(streamUrl);
-      const key = urlObj.pathname.slice(1);
-      streamUrl = await getSignedDownloadUrl(key);
-    }
+  // Check if the URL is an S3 URL and get a signed download URL so axios can stream it
+  let streamUrl = video.fileUrl;
+  if (streamUrl && streamUrl.includes("amazonaws.com")) {
+    const { getSignedDownloadUrl } = require("./S3Service");
+    const urlObj = new URL(streamUrl);
+    const key = urlObj.pathname.slice(1);
+    streamUrl = await getSignedDownloadUrl(key);
+  }
 
-    const streamReq = await axios({
-      method: "get",
-      url: streamUrl,
-      responseType: "stream",
-    });
-    const contentLength = parseInt(streamReq.headers['content-length'] || "0", 10);
+  const streamReq = await axios({
+    method: "get",
+    url: streamUrl,
+    responseType: "stream",
+  });
+  const contentLength = parseInt(streamReq.headers['content-length'] || "0", 10);
 
-    const res = await youtube.videos.insert({
-      part: "snippet,status",
-      requestBody: {
-        snippet: {
-          title: video.title,
-          description: video.description,
-        },
-        status: {
-          privacyStatus: "private",
-        },
+  const res = await youtube.videos.insert({
+    part: "snippet,status",
+    requestBody: {
+      snippet: {
+        title: video.title,
+        description: video.description,
       },
-      media: {
-        body: streamReq.data,
+      status: {
+        privacyStatus: "private",
       },
-    }, {
-      onUploadProgress: (evt) => {
-        if (contentLength > 0 && global.io && video.roomId) {
-          const progress = Math.min(Math.round((evt.bytesRead / contentLength) * 100), 99);
-          global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
-            videoId: video._id.toString(),
-            percent: progress,
-            message: "Pushing HD chunks to YouTube Servers..."
-          });
-        }
+    },
+    media: {
+      body: streamReq.data,
+    },
+  }, {
+    onUploadProgress: (evt) => {
+      if (contentLength > 0 && global.io && video.roomId) {
+        const progress = Math.min(Math.round((evt.bytesRead / contentLength) * 100), 99);
+        global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
+          videoId: video._id.toString(),
+          percent: progress,
+          message: "Pushing HD chunks to YouTube Servers..."
+        });
       }
-    });
+    }
+  });
 
   if (video.thumbnailUrl) {
     try {

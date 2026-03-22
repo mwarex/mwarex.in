@@ -104,7 +104,7 @@ export default function VideoCard({
   const getLabel = () => {
     switch (video.status) {
       case "pending": return "Review Pending";
-      case "approved": return "Approved";
+      case "approved": return video.rejectionReason?.includes("YouTube") ? "Upload Failed – Retry" : "Approved";
       case "rejected": return "Rejected";
       case "uploaded": return "On YouTube";
       case "processing": return "Uploading...";
@@ -179,6 +179,22 @@ export default function VideoCard({
               <div>
                 <span className="font-bold block text-[10px] uppercase tracking-wider text-red-500 mb-0.5">Feedback</span>
                 <p className="italic leading-snug">"{video.rejectionReason || video.editorRejectionReason}"</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* YouTube Upload Failed - show error reason */}
+      {video.status === "approved" && video.rejectionReason?.includes("YouTube") && (
+        <div className="absolute -top-4 -right-4 z-30 max-w-[260px] animate-in fade-in zoom-in duration-300 group-hover:scale-105 transition-transform">
+          <div className="relative bg-amber-50 dark:bg-amber-950/90 text-amber-900 dark:text-amber-100 text-xs p-3 rounded-tr-xl rounded-bl-xl rounded-tl-xl shadow-xl border border-amber-200 dark:border-amber-900">
+            <div className="absolute -bottom-1.5 right-0 w-3 h-3 bg-amber-50 dark:bg-amber-950/90 border-r border-b border-amber-200 dark:border-amber-900 rotate-45 transform origin-center"></div>
+            <div className="flex gap-2">
+              <Quote className="w-4 h-4 text-amber-400 rotate-180 flex-shrink-0" />
+              <div>
+                <span className="font-bold block text-[10px] uppercase tracking-wider text-amber-500 mb-0.5">YouTube Upload Error</span>
+                <p className="italic leading-snug">{video.rejectionReason}</p>
               </div>
             </div>
           </div>
