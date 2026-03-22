@@ -10,28 +10,62 @@ async function uploadToYoutube(video, userId) {
     auth: oauth2Client,
   });
 
-  // Check if the URL is an S3 URL and get a signed download URL so axios can stream it
-  let streamUrl = video.fileUrl;
-  if (streamUrl && streamUrl.includes("amazonaws.com")) {
+  // Prefer AI-edited file, fall back to raw upload
+  let streamUrl = video.editedFileUrl || video.fileUrl;
+
+  if (!streamUrl) {
+    throw new Error(`No file URL found for video ${video._id}`);
+  }
+
+  // Get a presigned download URL for private S3 objects
+  if (streamUrl.includes("amazonaws.com")) {
     const { getSignedDownloadUrl } = require("./S3Service");
     const urlObj = new URL(streamUrl);
     const key = urlObj.pathname.slice(1);
     streamUrl = await getSignedDownloadUrl(key);
   }
 
+  console.log(`[YT Upload] Streaming from URL (first 100 chars): ${streamUrl.substring(0, 100)}...`);
+
   const streamReq = await axios({
     method: "get",
     url: streamUrl,
     responseType: "stream",
+    timeout: 30000,
   });
-  const contentLength = parseInt(streamReq.headers['content-length'] || "0", 10);
+
+  const contentLength = parseInt(streamReq.headers["content-length"] || "0", 10);
+  console.log(`[YT Upload] Content-Length: ${contentLength}`);
+
+  // Emit steady 50% if we don't know the content-length (so UI doesn't freeze)
+  if (global.io && video.roomId) {
+    if (contentLength === 0) {
+      global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
+        videoId: video._id.toString(),
+        percent: 50,
+        message: "Uploading to YouTube...",
+      });
+    } else {
+      // Track real byte progress from stream data events
+      let bytesRead = 0;
+      streamReq.data.on("data", (chunk) => {
+        bytesRead += chunk.length;
+        const progress = Math.min(Math.round((bytesRead / contentLength) * 100), 99);
+        global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
+          videoId: video._id.toString(),
+          percent: progress,
+          message: "Pushing HD chunks to YouTube Servers...",
+        });
+      });
+    }
+  }
 
   const res = await youtube.videos.insert({
     part: "snippet,status",
     requestBody: {
       snippet: {
-        title: video.title,
-        description: video.description,
+        title: video.title || "Untitled Video",
+        description: video.description || "",
       },
       status: {
         privacyStatus: "private",
@@ -40,43 +74,34 @@ async function uploadToYoutube(video, userId) {
     media: {
       body: streamReq.data,
     },
-  }, {
-    onUploadProgress: (evt) => {
-      if (contentLength > 0 && global.io && video.roomId) {
-        const progress = Math.min(Math.round((evt.bytesRead / contentLength) * 100), 99);
-        global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
-          videoId: video._id.toString(),
-          percent: progress,
-          message: "Pushing HD chunks to YouTube Servers..."
-        });
-      }
-    }
   });
 
+  console.log(`[YT Upload] ✅ Upload complete. YouTube ID: ${res.data.id}`);
+
+  // Upload thumbnail (non-fatal)
   if (video.thumbnailUrl) {
     try {
       const thumbRes = await axios({
         method: "get",
         url: video.thumbnailUrl,
         responseType: "stream",
+        timeout: 15000,
       });
-
       await youtube.thumbnails.set({
         videoId: res.data.id,
-        media: {
-          body: thumbRes.data,
-        },
+        media: { body: thumbRes.data },
       });
     } catch (err) {
-      console.error("Thumbnail upload failed:", err.message);
+      console.error("[YT Upload] Thumbnail upload failed (non-fatal):", err.message);
     }
   }
 
+  // Always emit 100% on success so UI completes
   if (global.io && video.roomId) {
     global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
       videoId: video._id.toString(),
       percent: 100,
-      message: "Congratulations! Video published."
+      message: "🎉 Congratulations! Video published to YouTube.",
     });
   }
 
