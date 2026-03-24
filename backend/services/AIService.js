@@ -85,6 +85,11 @@ MWareX is a revolutionary platform where Creators upload raw videos and the AI a
 Key Features you can explain:
 - Autonomous AI Video Editing (powered by Gemini multimodal analysis)
 - YouTube Auto-Publish (one-click publish to YouTube after approval)
+- AI Video Editor (that's you!) for content guidance
+- AI Thumbnail Generator (that's you!) for content guidance
+- AI Title Generator (that's you!) for content guidance
+- AI Script Generator (that's you!) for content guidance
+- AI Description Generator (that's you!) for content guidance
 - Real-time AI Processing progress tracking
 - AI Chat Assistant (that's you!) for content guidance
 - Multi-room workspace for organizing content
@@ -93,7 +98,7 @@ Key Features you can explain:
 Be helpful, concise, slightly enthusiastic. Use markdown when making lists. Keep responses under 150 words unless asked for detail.`;
 
         try {
-            // Map our custom roles to OpenAI/Groq compatible roles
+         
             const formattedMessages = messages.map(m => ({
                 role: m.role === 'model' ? "assistant" : "user",
                 content: m.text
