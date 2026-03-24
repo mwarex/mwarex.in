@@ -147,20 +147,40 @@ class VideoController extends BaseController {
                         const pythonUrl = process.env.PYTHON_API_URL || "http://localhost:5001";
                         if (global.fetch) {
                             try {
-                                const response = await global.fetch(`${pythonUrl}/process_video`, {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                        videoId: video._id,
-                                        fileUrl: video.rawFileUrl || video.fileUrl,
-                                        aiPrompt: description || "Auto Edit"
-                                    })
-                                });
-                                
-                                if (!response.ok) {
-                                  throw new Error(`AI Engine returned status ${response.status}`);
+                                let aiSuccess = false;
+                                let retryCount = 0;
+                                let lastError = null;
+                                const maxRetries = 3;
+
+                                while (retryCount < maxRetries && !aiSuccess) {
+                                    try {
+                                        const response = await global.fetch(`${pythonUrl}/process_video`, {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({
+                                                videoId: video._id,
+                                                fileUrl: video.rawFileUrl || video.fileUrl,
+                                                aiPrompt: description || "Auto Edit"
+                                            })
+                                        });
+                                        
+                                        if (!response.ok) {
+                                            throw new Error(`AI Engine returned status ${response.status}`);
+                                        }
+                                        aiSuccess = true;
+                                    } catch (err) {
+                                        lastError = err;
+                                        retryCount++;
+                                        if (retryCount < maxRetries) {
+                                            console.log(`[AI Engine] Attempt ${retryCount} failed. Retrying in 5s... (${err.message})`);
+                                            await new Promise(res => setTimeout(res, 5000)); // wait 5 seconds before retrying
+                                        }
+                                    }
                                 }
-                                aiSuccess = true;
+
+                                if (!aiSuccess) {
+                                    throw lastError;
+                                }
                             } catch (netErr) {
                                 console.error("AI Engine network err:", netErr.message);
                                 video.status = "raw_rejected";
