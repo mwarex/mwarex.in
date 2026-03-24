@@ -140,12 +140,13 @@ class VideoController extends BaseController {
                     userId: req.userId,
                 });
                 
-                // ── AI AGENT INTEGRATION: Send raw video to Python Engine ──
+                // ── AI AGENT INTEGRATION: Send raw video to Python Engine (Background) ──
                 if (!editorId) {
-                    try {
-                        let aiSuccess = false;
-                        const pythonUrl = process.env.PYTHON_API_URL || "http://localhost:5001";
-                        if (global.fetch) {
+                    const pythonUrl = process.env.PYTHON_API_URL || "http://localhost:5001";
+                    
+                    if (global.fetch) {
+                        // Run in background so UI doesn't freeze waiting for retries
+                        (async () => {
                             try {
                                 let aiSuccess = false;
                                 let retryCount = 0;
@@ -173,7 +174,7 @@ class VideoController extends BaseController {
                                         retryCount++;
                                         if (retryCount < maxRetries) {
                                             console.log(`[AI Engine] Attempt ${retryCount} failed. Retrying in 5s... (${err.message})`);
-                                            await new Promise(res => setTimeout(res, 5000)); // wait 5 seconds before retrying
+                                            await new Promise(res => setTimeout(res, 5000));
                                         }
                                     }
                                 }
@@ -181,21 +182,33 @@ class VideoController extends BaseController {
                                 if (!aiSuccess) {
                                     throw lastError;
                                 }
+
+                                // If success, update state
+                                video.status = "ai_processing";
+                                video.aiProgress = { percent: 0, message: "Connected to AI Engine instance..." };
+                                await video.save();
+
+                                if (global.io && roomId) {
+                                    global.io.to(`room_${roomId.toString()}`).emit("video_updated", {
+                                        videoId: video._id,
+                                        status: "ai_processing"
+                                    });
+                                }
+
                             } catch (netErr) {
                                 console.error("AI Engine network err:", netErr.message);
                                 video.status = "raw_rejected";
                                 video.rejectionReason = `AI Engine Error: ${netErr.message}`;
                                 await video.save();
+
+                                if (global.io && roomId) {
+                                    global.io.to(`room_${roomId.toString()}`).emit("video_updated", {
+                                        videoId: video._id,
+                                        status: "raw_rejected"
+                                    });
+                                }
                             }
-                        }
-                        
-                        if (aiSuccess) {
-                            video.status = "ai_processing";
-                            video.aiProgress = { percent: 0, message: "Connected to AI Engine instance..." };
-                            await video.save();
-                        }
-                    } catch(aiError) {
-                        console.error("Failed to trigger AI Agent", aiError);
+                        })();
                     }
                 }
                 
