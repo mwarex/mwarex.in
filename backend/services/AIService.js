@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const axios = require("axios");
 
 class AIService {
     constructor() {
@@ -91,24 +92,37 @@ Key Features you can explain:
 
 Be helpful, concise, slightly enthusiastic. Use markdown when making lists. Keep responses under 150 words unless asked for detail.`;
 
-        const conversationStrings = messages.map(m => `${m.role === 'model' ? "Assistant" : "User"}: ${m.text}`);
-        const finalPrompt = `${systemPrompt}\n\nConversation:\n${conversationStrings.join('\n')}\n\nAssistant:`;
+        try {
+            // Map our custom roles to OpenAI/Groq compatible roles
+            const formattedMessages = messages.map(m => ({
+                role: m.role === 'model' ? "assistant" : "user",
+                content: m.text
+            }));
 
-        // Try primary model first, then fallback
-        const models = ["gemini-2.0-flash", "gemini-1.5-flash"];
-        
-        for (const modelName of models) {
-            try {
-                const model = this.genAI.getGenerativeModel({ model: modelName });
-                const result = await model.generateContent(finalPrompt);
-                return result.response.text();
-            } catch (error) {
-                console.error(`AI Chat Error with ${modelName}:`, error.message);
-                continue;
-            }
+            const response = await axios.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                    model: "llama-3.3-70b-versatile",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        ...formattedMessages
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 1024,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+            return response.data.choices[0].message.content;
+        } catch (error) {
+            console.error("Groq AI Chat Error:", error.response?.data || error.message);
+            return "I'm experiencing high demand right now. Please try again in a moment! 🔄";
         }
-        
-        return "I'm experiencing high demand right now. Please try again in a moment! 🔄";
     }
 }
 
