@@ -37,7 +37,31 @@ export default function AIChatBot() {
 
     try {
       const res = await aiAPI.chat({ messages: newMessages });
-      setMessages([...newMessages, { role: 'model', text: res.data.reply }]);
+      const fullReply = res.data.reply;
+      
+      // Create an empty message for the model
+      const modelMessage: Message = { role: 'model', text: '' };
+      setMessages([...newMessages, modelMessage]);
+      
+      // Simulate streaming effect
+      const words = fullReply.split(' ');
+      let currentText = '';
+      
+      for (let i = 0; i < words.length; i++) {
+        currentText += (i === 0 ? '' : ' ') + words[i];
+        
+        // Update the last message text
+        setMessages(prev => {
+          const updated = [...prev];
+          if (updated.length > 0) {
+            updated[updated.length - 1] = { ...updated[updated.length - 1], text: currentText };
+          }
+          return updated;
+        });
+        
+        // Brief pause to simulate typing/streaming
+        await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 40));
+      }
     } catch (err) {
       console.error('Chat error:', err);
       setMessages([...newMessages, { role: 'model', text: 'Looks like I encountered a connection issue. Please try again in a moment.' }]);

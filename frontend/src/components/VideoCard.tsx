@@ -19,7 +19,8 @@ import {
   Download,
   Upload,
   ArrowRight,
-  Trash2
+  Trash2,
+  Bot
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -83,6 +84,7 @@ export default function VideoCard({
       case "raw_uploaded": return <FileVideo className="w-3.5 h-3.5" />;
       case "editing_in_progress": return <Clock className="w-3.5 h-3.5" />;
       case "raw_rejected": return <XCircle className="w-3.5 h-3.5" />;
+      case "ai_processing": return <Bot className="w-3.5 h-3.5 animate-pulse" />;
       default: return null;
     }
   };
@@ -97,6 +99,7 @@ export default function VideoCard({
       case "raw_uploaded": return "bg-purple-500/10 text-purple-500 border-purple-500/20";
       case "editing_in_progress": return "bg-blue-400/10 text-blue-400 border-blue-400/20";
       case "raw_rejected": return "bg-red-400/10 text-red-400 border-red-400/20";
+      case "ai_processing": return "bg-indigo-500/10 text-indigo-500 border-indigo-500/20";
       default: return "bg-gray-500/10 text-gray-500";
     }
   };
@@ -111,6 +114,7 @@ export default function VideoCard({
       case "raw_uploaded": return "Raw Video Requests";
       case "editing_in_progress": return "In Progress";
       case "raw_rejected": return "Raw Rejected";
+      case "ai_processing": return "AI Processing...";
       default: return video.status;
     }
   }

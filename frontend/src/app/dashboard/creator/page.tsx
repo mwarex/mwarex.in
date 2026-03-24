@@ -355,7 +355,7 @@ export default function CreatorDashboard() {
         video.description?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesTab =
         activeTab === "all" ||
-        (activeTab === "raw_uploaded" && (video.status === "raw_uploaded" || video.status === "editing_in_progress")) ||
+        (activeTab === "raw_uploaded" && (video.status === "raw_uploaded" || video.status === "editing_in_progress" || video.status === "ai_processing")) ||
         video.status === activeTab;
       return matchesSearch && matchesTab;
     });
