@@ -164,7 +164,7 @@ class VideoController extends BaseController {
                             } catch (netErr) {
                                 console.error("AI Engine network err:", netErr.message);
                                 video.status = "raw_rejected";
-                                video.rejectionReason = "AI Processor Offline: Ensure your Python server is running on port 5001";
+                                video.rejectionReason = `AI Engine Error: ${netErr.message}`;
                                 await video.save();
                             }
                         }

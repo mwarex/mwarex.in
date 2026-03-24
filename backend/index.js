@@ -123,6 +123,7 @@ app.get("/ping", (req, res) => {
 
 const keepServerAlive = () => {
   const pingUrl = `${SELF_PING_URL}/health`;
+  const pythonPingUrl = process.env.PYTHON_API_URL ? `${process.env.PYTHON_API_URL}/health` : "http://localhost:5001/health";
 
   setInterval(async () => {
     try {
@@ -130,6 +131,13 @@ const keepServerAlive = () => {
       console.log(`[Keep-Alive] Pinged at ${new Date().toISOString()} - Status: ${response.status}`);
     } catch (error) {
       console.log(`[Keep-Alive] Ping failed: ${error.message}`);
+    }
+
+    try {
+      const pyResponse = await axios.get(pythonPingUrl, { timeout: 10000 });
+      console.log(`[Keep-Alive-Python] Pinged at ${new Date().toISOString()} - Status: ${pyResponse.status}`);
+    } catch (error) {
+      console.log(`[Keep-Alive-Python] Ping result: ${error.message}`);
     }
   }, PING_INTERVAL);
 };
