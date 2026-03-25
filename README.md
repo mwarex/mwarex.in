@@ -58,8 +58,8 @@
 
   | **Frontend Core** | **Backend Engine** | **Cloud & AI** |
   |:---:|:---:|:---:|
-  | <img height="50" src="https://skillicons.dev/icons?i=nextjs,ts,tailwind,framer" /> | <img height="50" src="https://skillicons.dev/icons?i=nodejs,express,mongodb,postman" /> | <img height="50" src="https://skillicons.dev/icons?i=gcp,cloudinary,vercel,git" /> |
-  | **Next.js 16 • TypeScript • Framer Motion** | **Node.js • Express • MongoDB Atlas** | **Google OAuth • Cloudinary • Vercel** |
+  | <img height="50" src="https://skillicons.dev/icons?i=nextjs,ts,tailwind,framer" /> | <img height="50" src="https://skillicons.dev/icons?i=nodejs,express,mongodb,postman" /> | <img height="50" src="https://skillicons.dev/icons?i=gcp,cloudinary,python,pytorch" /> |
+  | **Next.js 16 • TypeScript • Framer Motion** | **Node.js • Express • MongoDB Atlas** | **Gemini AI • FFMPEG • AWS S3** |
 
 </div>
 
@@ -95,6 +95,11 @@ MwareX/
 │   ├── routes/               # REST API Endpoints
 │   ├── services/             # Core Logic (YouTube Uploads, Email)
 │   └── middlewares/          # Security Layers (CORS, Auth)
+│
+├── 🤖 ai_engine/             # Python Multimodal AI Microservice
+│   ├── app.py                # Gemini AI & FFMPEG logic
+│   ├── requirements.txt      # Python dependencies
+│   └── Dockerfile            # Container build config
 │
 └── 📄 README.md             # You are here
 ```
