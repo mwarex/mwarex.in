@@ -86,7 +86,7 @@ class AuthService {
         user.resetPasswordOtpExpiry = Date.now() + 15 * 60 * 1000; // 15 mins expiry
         await user.save();
 
-        const { sendPasswordResetOTP } = require("./EmailService");
+        const { sendPasswordResetOTP } = require("./emailService");
         await sendPasswordResetOTP(email, otp);
 
         return { message: "If that email exists, an OTP has been sent." };
