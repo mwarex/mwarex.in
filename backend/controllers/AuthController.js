@@ -62,6 +62,33 @@ class AuthController extends BaseController {
             return this.handleError(res, err);
         }
     }
+
+    async forgotPassword(req, res) {
+        try {
+            const result = await this.authService.forgotPassword(req.body.email);
+            return this.success(res, result);
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    async verifyOTP(req, res) {
+        try {
+            const result = await this.authService.verifyOTP(req.body.email, req.body.otp);
+            return this.success(res, result);
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    async resetPassword(req, res) {
+        try {
+            const result = await this.authService.resetPassword(req.body.email, req.body.otp, req.body.newPassword);
+            return this.success(res, result);
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
 }
 
 module.exports = new AuthController(AuthService);

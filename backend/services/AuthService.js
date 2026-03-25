@@ -74,6 +74,47 @@ class AuthService {
         return { message: "Editor removed successfully" };
     }
 
+    async forgotPassword(email) {
+        const user = await this.userRepository.findByEmail(email);
+        if (!user) {
+            // Act as if it succeeded to prevent email enumeration attacks
+            return { message: "If that email exists, an OTP has been sent." };
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+        user.resetPasswordOtp = otp;
+        user.resetPasswordOtpExpiry = Date.now() + 15 * 60 * 1000; // 15 mins expiry
+        await user.save();
+
+        const { sendPasswordResetOTP } = require("./EmailService");
+        await sendPasswordResetOTP(email, otp);
+
+        return { message: "If that email exists, an OTP has been sent." };
+    }
+
+    async verifyOTP(email, otp) {
+        const user = await this.userRepository.findByEmail(email);
+        if (!user || user.resetPasswordOtp !== otp || user.resetPasswordOtpExpiry < Date.now()) {
+            throw { status: 400, message: "Invalid or expired OTP" };
+        }
+        return { message: "OTP verified successfully. You can now reset your password." };
+    }
+
+    async resetPassword(email, otp, newPassword) {
+        const user = await this.userRepository.findByEmail(email);
+        if (!user || user.resetPasswordOtp !== otp || user.resetPasswordOtpExpiry < Date.now()) {
+            throw { status: 400, message: "Invalid or expired OTP" };
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 7);
+        user.password = hashedPassword;
+        user.resetPasswordOtp = undefined;
+        user.resetPasswordOtpExpiry = undefined;
+        await user.save();
+
+        return { message: "Password reset successful." };
+    }
+
     generateToken(userId) {
         return jwt.sign({ id: userId }, process.env.JWT_SECRET_USER);
     }

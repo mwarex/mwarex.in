@@ -438,6 +438,17 @@ export default function CreatorDashboard() {
             ...prev,
             [data.videoId]: { percent: data.percent, message: data.message || "Processing..." }
           }));
+
+          // Auto-remove the AI banner 6 seconds after completing
+          if (data.percent === 100) {
+            setTimeout(() => {
+              setAiProgressMap(prev => {
+                const newMap = { ...prev };
+                delete newMap[data.videoId];
+                return newMap;
+              });
+            }, 6000);
+          }
         }
       };
       const handleYoutubeProgress = (data: any) => {

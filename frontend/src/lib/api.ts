@@ -37,8 +37,18 @@ export const authAPI = {
     api.post("/api/v1/admin/signin", data),
 
   // Editor auth
-  editorSignup: (data: { email: string; password: string }) =>
+  editorSignup: (data: { email: string; password: string; name?: string }) =>
     api.post("/api/editor/signup", data),
+
+  // Password Reset
+  forgotPassword: (data: { email: string }) =>
+    api.post("/api/v1/user/forgot-password", data),
+
+  verifyOTP: (data: { email: string; otp: string }) =>
+    api.post("/api/v1/user/verify-otp", data),
+
+  resetPassword: (data: { email: string; otp: string; newPassword: string }) =>
+    api.post("/api/v1/user/reset-password", data),
 };
 
 // Video APIs

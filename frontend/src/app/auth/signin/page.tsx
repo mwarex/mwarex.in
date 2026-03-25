@@ -338,7 +338,7 @@ export default function SignInPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Password</label>
-                <Link href="#" className="text-xs text-primary hover:text-primary/80 transition-colors font-medium">Forgot password?</Link>
+                <Link href="/auth/forgot-password" className="text-xs text-primary hover:text-primary/80 transition-colors font-medium">Forgot password?</Link>
               </div>
               <div className="relative">
                 <input

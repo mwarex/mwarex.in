@@ -9,4 +9,9 @@ router.put("/settings", userAuth, (req, res) => AuthController.updateSettings(re
 router.get("/editors", userAuth, (req, res) => AuthController.getEditors(req, res));
 router.delete("/editors/:id", userAuth, (req, res) => AuthController.removeEditor(req, res));
 
+// Password Reset Routes
+router.post("/forgot-password", (req, res) => AuthController.forgotPassword(req, res));
+router.post("/verify-otp", (req, res) => AuthController.verifyOTP(req, res));
+router.post("/reset-password", (req, res) => AuthController.resetPassword(req, res));
+
 module.exports = router;
