@@ -9,12 +9,16 @@ import gc
 import google.generativeai as genai
 from urllib.parse import urlparse
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 load_dotenv()  # Cloud: reads from container env vars
-load_dotenv(os.path.join(os.path.dirname(__file__), '../backend/.env'))  # Local dev: reads from backend/.env
+local_env = os.path.join(os.path.dirname(__file__), '../backend/.env')
+if os.path.exists(local_env):
+    load_dotenv(local_env)  # Local dev: reads from backend/.env
 
 app = Flask(__name__)
+CORS(app) # Enable CORS for all routes (important for cross-service communication)
 
 NODE_API_URL = os.getenv("NODE_API_URL", "http://localhost:8000")
 
@@ -27,7 +31,15 @@ s3_client = boto3.client(
 BUCKET_NAME = os.getenv('AWS_S3_BUCKET')
 
 # Setup Gemini AI
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    print("[AI AGENT WARNING] GEMINI_API_KEY is missing! AI features will fail.")
+else:
+    try:
+        genai.configure(api_key=api_key)
+        print("[AI AGENT] Gemini AI configured successfully.")
+    except Exception as e:
+        print(f"[AI AGENT ERROR] Failed to configure Gemini AI: {e}")
 
 def download_file(file_url, local_filename):
     print(f"[AI AGENT] Securely downloading S3 video: {file_url}")
@@ -198,4 +210,6 @@ def health():
     return jsonify({"status": "Multimodal Gemini AI Video Engine is ALIVE and running 🚀"})
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    port = int(os.getenv("PORT", 5001))
+    print(f"Starting Multimodal AI Engine on port {port}...")
+    app.run(host='0.0.0.0', port=port, debug=False)
