@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 // This API route is called by Vercel Cron every 14 minutes
 // to keep the Render backend server awake and prevent cold starts
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://mwarex-backend.onrender.com';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://mwarex-in-hlsi.onrender.com';
 
 export async function GET() {
     const startTime = Date.now();
