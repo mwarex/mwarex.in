@@ -22,7 +22,7 @@ const googleAuthRoutes = require("./routes/googleAuth");
 const http = require("http");
 const { Server } = require("socket.io");
 
-const SELF_PING_URL = process.env.BACKEND_URL || "https://mwarex-in.onrender.com";
+const SELF_PING_URL = process.env.BACKEND_URL || "https://mwarex-in-hlsi.onrender.com";
 const PING_INTERVAL = 14 * 60 * 1000;
 
 const app = express();
