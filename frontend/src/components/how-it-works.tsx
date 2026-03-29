@@ -61,9 +61,23 @@ export function HowItWorks() {
             className="py-32 relative bg-[#111111] overflow-hidden border-t border-white/5"
             id="workflow"
         >
-            {/* Background Elements - Minimalist */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-1/2 right-[-20%] w-[600px] h-[600px] bg-[#C8A97E]/5 rounded-full blur-[150px] opacity-30" />
+            {/* Background Elements - Professional Image integration */}
+            <div className="absolute inset-0 pointer-events-none z-0">
+                {/* Base Image */}
+                <img 
+                    src="/bg-images/10071.jpg" 
+                    alt="Process Background" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-10 md:opacity-[0.15]"
+                />
+                <div className="absolute inset-0 bg-[#111111]/40 mix-blend-multiply" />
+                
+                {/* Flawless Gradient Fades to seamlessly blend with solid #111111 background */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#111111] via-transparent to-[#111111] opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-transparent to-[#111111] opacity-90" />
+                
+                {/* Theme Accent Glow */}
+                <div className="absolute top-1/4 right-[5%] w-[500px] h-[500px] bg-[#C8A97E]/[0.03] rounded-full blur-[120px]" />
+                <div className="absolute bottom-1/4 left-[5%] w-[600px] h-[600px] bg-[#C8A97E]/[0.02] rounded-full blur-[150px]" />
             </div>
 
             <div className="max-w-6xl mx-auto px-6 relative z-10">

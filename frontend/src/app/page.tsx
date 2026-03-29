@@ -71,53 +71,29 @@ export default function LandingPage() {
 
           {/* Enhanced Final CTA Section - Craftsman Style */}
           <section className="py-36 md:py-44 relative overflow-hidden bg-[#111111]">
-            {/* Cinematic Background */}
-            <div className="absolute inset-0 -z-10 w-full h-full opacity-20">
-              <img
-                src="/bg-house.png"
-                alt="Background"
-                className="w-full h-full object-cover object-center"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-[#111111]" />
+            {/* Cinematic Background - Pushed to the side */}
+            <div className="absolute inset-0 pointer-events-none z-0">
+              <div 
+                className="absolute inset-0 w-full h-full lg:left-auto lg:right-0 lg:w-[65%]"
+                style={{
+                  maskImage: 'linear-gradient(to right, transparent 0%, black 60%)',
+                  WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 60%)'
+                }}
+              >
+                <img
+                  src="/bg-images/10055.jpg"
+                  alt="Feature Background"
+                  className="w-full h-full object-cover object-right md:object-center opacity-30 md:opacity-50 mix-blend-screen"
+                />
+              </div>
+              {/* Overlays for smooth integration */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-[#111111] opacity-90" />
+              <div className="absolute inset-0 bg-gradient-to-l from-[#111111]/30 via-transparent to-[#111111]" />
+              
+              {/* Subtle accent glow */}
+              <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[600px] h-[600px] bg-[#C8A97E]/[0.03] blur-[150px] rounded-[100%] pointer-events-none -z-10" />
             </div>
 
-            {/* Premium corner net grid — starts strong at corners, fades inward, with a soft fade at the very top edge */}
-            <div
-              className="absolute inset-0 pointer-events-none overflow-hidden z-0"
-              style={{
-                maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)'
-              }}
-            >
-              {/* Top-left — strongest */}
-              <div className="absolute top-0 left-0 w-[50%] h-[70%]" style={{
-                backgroundImage: 'linear-gradient(rgba(200,169,126,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.09) 1px, transparent 1px)',
-                backgroundSize: '36px 36px',
-                maskImage: 'radial-gradient(ellipse at top left, black 0%, transparent 60%)',
-                WebkitMaskImage: 'radial-gradient(ellipse at top left, black 0%, transparent 60%)'
-              }} />
-              {/* Top-right — strongest */}
-              <div className="absolute top-0 right-0 w-[50%] h-[70%]" style={{
-                backgroundImage: 'linear-gradient(rgba(200,169,126,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.09) 1px, transparent 1px)',
-                backgroundSize: '36px 36px',
-                maskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 60%)',
-                WebkitMaskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 60%)'
-              }} />
-              {/* Bottom-left — subtler */}
-              <div className="absolute bottom-0 left-0 w-[40%] h-[50%]" style={{
-                backgroundImage: 'linear-gradient(rgba(200,169,126,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.05) 1px, transparent 1px)',
-                backgroundSize: '36px 36px',
-                maskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 55%)',
-                WebkitMaskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 55%)'
-              }} />
-              {/* Bottom-right — subtler */}
-              <div className="absolute bottom-0 right-0 w-[40%] h-[50%]" style={{
-                backgroundImage: 'linear-gradient(rgba(200,169,126,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.05) 1px, transparent 1px)',
-                backgroundSize: '36px 36px',
-                maskImage: 'radial-gradient(ellipse at bottom right, black 0%, transparent 55%)',
-                WebkitMaskImage: 'radial-gradient(ellipse at bottom right, black 0%, transparent 55%)'
-              }} />
-            </div>
 
             <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
               {/* Badge */}

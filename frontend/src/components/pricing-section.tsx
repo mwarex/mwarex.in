@@ -164,9 +164,23 @@ export function PricingSection() {
     };
 
     return (
-        <section className="py-32 relative" id="pricing">
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[500px] bg-[#C8A97E]/[0.02] blur-[120px] rounded-full" />
+        <section className="py-32 relative overflow-hidden bg-[#111111]" id="pricing">
+            <div className="absolute inset-0 pointer-events-none z-0">
+                <img 
+                    src="/bg-images/10100.jpg" 
+                    alt="Pricing Background" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-15 md:opacity-[0.20]"
+                    style={{
+                        maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+                    }}
+                />
+                
+                {/* Seamless deep edge fades to match surrounding sections */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#111111] via-transparent to-transparent opacity-100 h-1/3" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-transparent opacity-100 top-2/3 h-1/3" />
+
+                <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[600px] bg-[#C8A97E]/[0.03] blur-[150px] rounded-[100%] pointer-events-none" />
                 <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.015] mix-blend-overlay"></div>
             </div>
 

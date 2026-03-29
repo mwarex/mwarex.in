@@ -7,6 +7,19 @@ import { cn } from "@/lib/utils";
 export function ProductPreview() {
     return (
         <section className="relative py-32 overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none z-0">
+                <img 
+                    src="/bg-images/10037.jpg" 
+                    alt="Background" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-10 md:opacity-[0.15]"
+                    style={{
+                        maskImage: 'radial-gradient(ellipse at center, black 0%, transparent 80%)',
+                        WebkitMaskImage: 'radial-gradient(ellipse at center, black 0%, transparent 80%)'
+                    }}
+                />
+                <div className="absolute inset-0 bg-[#111111]/40 mix-blend-multiply" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#111111] via-transparent to-[#111111]"></div>
+            </div>
             <div className="max-w-7xl mx-auto px-6 relative z-10">
                 {/* Header */}
                 <div className="text-center mb-24 flex flex-col items-center">

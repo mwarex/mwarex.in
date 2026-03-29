@@ -31,8 +31,23 @@ export function FeatureGrid() {
     return (
         <section className="py-32 relative overflow-hidden" id="features">
             {/* Background elements */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[30%] left-[-20%] w-[600px] h-[600px] bg-[#C8A97E]/5 rounded-full blur-[150px] opacity-40" />
+            {/* Background elements */}
+            <div className="absolute inset-0 pointer-events-none z-0">
+                {/* Base Image */}
+                <img 
+                    src="/bg-images/10040.jpg" 
+                    alt="Background" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-10 md:opacity-15"
+                />
+                
+                {/* Overlay processing */}
+                <div className="absolute inset-0 bg-[#111111]/30 mix-blend-multiply" />
+                
+                {/* Perfect Fades */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-[#111111]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#111111] via-transparent to-[#111111]" />
+                
+                <div className="absolute top-[30%] left-[-20%] w-[600px] h-[600px] bg-[#C8A97E]/[0.02] rounded-full blur-[150px] opacity-40" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#111111] rounded-full blur-[120px]" />
                 <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.015] mix-blend-overlay"></div>
             </div>

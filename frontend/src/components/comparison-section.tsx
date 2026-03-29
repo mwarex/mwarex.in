@@ -6,8 +6,22 @@ import { X, Check } from "lucide-react";
 export function ComparisonSection() {
     return (
         <section className="py-32 relative bg-[#111111] overflow-hidden">
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#C8A97E]/5 rounded-[100%] blur-[120px]" />
+            <div className="absolute inset-0 pointer-events-none z-0">
+                {/* Base Image */}
+                <img 
+                    src="/bg-images/10087.jpg" 
+                    alt="Background" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-10 md:opacity-[0.15]"
+                />
+                
+                {/* Overlay processing */}
+                <div className="absolute inset-0 bg-[#111111]/40 mix-blend-multiply" />
+                
+                {/* Perfect Fades */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#111111] via-transparent to-[#111111] opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-transparent to-[#111111] opacity-60" />
+
+                <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#C8A97E]/[0.03] rounded-full blur-[120px]" />
             </div>
 
             <div className="max-w-7xl mx-auto px-6 relative z-10">

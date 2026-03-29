@@ -15,7 +15,15 @@ export function FounderSection() {
     return (
         <section className="relative py-32 md:py-48 overflow-hidden bg-[#111111] border-t border-white/5">
             {/* Background Minimalist Ambiance */}
-            <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 pointer-events-none z-0">
+                <img 
+                    src="/bg-images/10039.jpg" 
+                    alt="Vision Background" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-15 md:opacity-[0.25] mix-blend-screen" 
+                />
+                <div className="absolute inset-0 bg-[#111111]/30 mix-blend-multiply" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-transparent to-[#111111] opacity-90" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#111111] via-transparent to-[#111111] opacity-60" />
                 <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[600px] h-[600px] bg-[#C8A97E]/[0.02] blur-[120px] rounded-full" />
                 <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.015] mix-blend-overlay"></div>
             </div>

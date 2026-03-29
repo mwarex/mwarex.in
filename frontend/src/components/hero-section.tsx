@@ -7,19 +7,11 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 const BACKGROUNDS = [
-    "/images/mwarexplay.jpg",
-    "/images/IMG_20260308_193407.png"
+    "/bg-images/10097.jpg"
 ];
 
 export function HeroSection() {
-    const [currentBg, setCurrentBg] = useState(1);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentBg((prev) => (prev + 1) % BACKGROUNDS.length);
-        }, 7000);
-        return () => clearInterval(interval);
-    }, []);
+    const [currentBg, setCurrentBg] = useState(0);
 
     return (
         <section className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-12">
@@ -35,15 +27,12 @@ export function HeroSection() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 2.5, ease: "easeInOut" }}
-                        className={`absolute inset-0 w-full h-full ${currentBg === 1
-                            ? "lg:left-auto lg:right-0 lg:w-[75%] [mask-image:linear-gradient(to_right,transparent_10%,black_40%)]"
-                            : ""
-                            }`}
+                        className="absolute inset-0 w-full h-full lg:left-auto lg:right-0 lg:w-[85%] [mask-image:linear-gradient(to_right,transparent_0%,black_70%)]"
                     >
                         <img
                             src={BACKGROUNDS[currentBg]}
                             alt="Background"
-                            className={`w-full h-full object-cover opacity-70 ${currentBg === 1 ? 'object-right lg:object-center' : 'object-center'}`}
+                            className="w-full h-full object-cover opacity-60 object-right"
                         />
                     </motion.div>
                 </AnimatePresence>
