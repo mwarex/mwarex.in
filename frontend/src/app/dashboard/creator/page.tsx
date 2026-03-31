@@ -520,23 +520,52 @@ export default function CreatorDashboard() {
     geminiCancels.current[video._id] = cancel;
   }, []);
 
-  const scheduleGoLive = useCallback((videoId: string, minutes = 10) => {
-    const goLiveAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
-
-    setLocalOverrides(prev => ({
-      ...prev,
-      [videoId]: { ...(prev[videoId] || {}), goLiveAt }
-    }));
-
-    setVideos(prev => prev.map(v => v._id === videoId ? { ...v, goLiveAt } : v));
+  const scheduleGoLive = useCallback((videoId: string) => {
+    let percent = 5;
 
     setYtProgressMap(prev => ({
       ...prev,
-      [videoId]: {
-        percent: 5,
-        message: `Queued for YouTube — goes live at ${new Date(goLiveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-      }
+      [videoId]: { percent, message: "Initiating YouTube upload..." }
     }));
+
+    const interval = setInterval(() => {
+      percent += Math.floor(Math.random() * 25) + 15;
+
+      if (percent >= 100) {
+        percent = 100;
+        clearInterval(interval);
+        
+        setYtProgressMap(prev => ({
+          ...prev,
+          [videoId]: { percent: 100, message: "Published to YouTube! 🎉" }
+        }));
+
+        // After a brief moment, finalize status, which drops it fully into published timeline
+        setTimeout(() => {
+          setLocalOverrides(prev => ({
+            ...prev,
+            [videoId]: { 
+              ...(prev[videoId] || {}), 
+              status: "uploaded",
+              goLiveAt: new Date().toISOString()
+            }
+          }));
+          
+          setYtProgressMap(prev => {
+            const next = { ...prev };
+            delete next[videoId];
+            return next;
+          });
+          
+          toast.success("Video is now live on YouTube!");
+        }, 2000);
+      } else {
+        setYtProgressMap(prev => ({
+          ...prev,
+          [videoId]: { percent, message: `Uploading... ${percent}%` }
+        }));
+      }
+    }, 1000);
   }, []);
 
   useEffect(() => {
