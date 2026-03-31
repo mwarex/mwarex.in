@@ -256,7 +256,7 @@ export default function CreatorDashboard() {
       const res = await videoAPI.uploadRaw(formData);
       const uploadedVideo = res.data?.video;
       if (uploadedVideo) {
-        startGeminiProxy(uploadedVideo);
+        // startGeminiProxy(uploadedVideo); // Using backend WS instead
       }
       setIsUploadModalOpen(false);
       setUploadFile(null);
@@ -576,24 +576,27 @@ export default function CreatorDashboard() {
   }, []);
 
   useEffect(() => {
-    const shouldSimulateGemini = (video: Video) => {
-      if (!video?._id || video.editorId) return false;
-      if (geminiInFlight.current.has(video._id)) return false;
-
-      const needsAutoEdit =
-        video.status === "raw_uploaded" ||
-        video.status === "ai_processing" ||
-        (video.status === "editing_in_progress" && !video.fileUrl) ||
-        (!video.fileUrl && !!video.rawFileUrl);
-
-      return needsAutoEdit;
-    };
-
-    displayVideos.forEach((video) => {
-      if (shouldSimulateGemini(video)) {
-        startGeminiProxy(video);
-      }
-    });
+    // The Gemini proxy logic was conflicting with the backend's clean websocket
+    // simulation logic so we'll suspend the frontend dual-running effect to fix the glitch.
+    
+    // const shouldSimulateGemini = (video: Video) => {
+    //   if (!video?._id || video.editorId) return false;
+    //   if (geminiInFlight.current.has(video._id)) return false;
+    //
+    //   const needsAutoEdit =
+    //     video.status === "raw_uploaded" ||
+    //     video.status === "ai_processing" ||
+    //     (video.status === "editing_in_progress" && !video.fileUrl) ||
+    //     (!video.fileUrl && !!video.rawFileUrl);
+    //
+    //   return needsAutoEdit;
+    // };
+    //
+    // displayVideos.forEach((video) => {
+    //   if (shouldSimulateGemini(video)) {
+    //     startGeminiProxy(video);
+    //   }
+    // });
   }, [displayVideos, startGeminiProxy]);
 
   useEffect(() => {
@@ -1713,7 +1716,7 @@ export default function CreatorDashboard() {
         isOpen={isS3UploadOpen}
         onClose={() => setIsS3UploadOpen(false)}
         onSuccess={(video) => {
-          if (video) startGeminiProxy(video);
+          // if (video) startGeminiProxy(video); // Use backend WS instead
           fetchVideos();
         }}
         roomId={currentRoom?._id}
