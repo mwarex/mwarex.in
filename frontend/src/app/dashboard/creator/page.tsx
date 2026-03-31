@@ -77,15 +77,16 @@ type VideoOverride = {
   goLiveAt?: string;
 };
 
-const statusPriority: Record<Video["status"], number> = {
+const statusPriority: Record<string, number> = {
   raw_uploaded: 1,
   ai_processing: 2,
   editing_in_progress: 3,
   pending: 4,
-  approved: 5,
-  uploaded: 6,
-  rejected: 6,
-  raw_rejected: 6,
+  processing: 5,
+  approved: 6,
+  uploaded: 7,
+  rejected: 7,
+  raw_rejected: 7,
 };
 
 export default function CreatorDashboard() {
