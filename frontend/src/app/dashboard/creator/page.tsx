@@ -85,6 +85,7 @@ const statusPriority: Record<Video["status"], number> = {
   approved: 5,
   uploaded: 6,
   rejected: 6,
+  raw_rejected: 6,
 };
 
 export default function CreatorDashboard() {
