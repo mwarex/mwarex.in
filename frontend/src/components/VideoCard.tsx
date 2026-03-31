@@ -22,7 +22,7 @@ import {
   Trash2,
   Bot
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { s3API } from "@/lib/api";
@@ -41,6 +41,9 @@ interface VideoCardProps {
     editorRejectionReason?: string;
     rawFileUrl?: string;
     aiProgress?: { percent: number; message: string; };
+    createdAt?: string;
+    updatedAt?: string;
+    goLiveAt?: string;
   };
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
@@ -53,6 +56,7 @@ interface VideoCardProps {
   onDeleteForMe?: (id: string) => void;
   onDeleteForEveryone?: (id: string) => void;
   aiProgress?: { percent: number; message: string; };
+  showTimeline?: boolean;
 }
 
 export default function VideoCard({
@@ -67,12 +71,14 @@ export default function VideoCard({
   isLoading = false,
   onDeleteForMe,
   onDeleteForEveryone,
-  aiProgress
+  aiProgress,
+  showTimeline = false
 }: VideoCardProps) {
   const router = useRouter();
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [nowTs, setNowTs] = useState(() => Date.now());
 
   const getStatusIcon = () => {
     switch (video.status) {
@@ -143,8 +149,17 @@ export default function VideoCard({
 
   const videoUrl = getVideoUrl(currentVideoPath);
 
+  const goLiveDate = video.goLiveAt ? new Date(video.goLiveAt) : null;
+  const minutesToLive = goLiveDate ? Math.max(0, Math.round((goLiveDate.getTime() - nowTs) / 60000)) : null;
+  const isLive = goLiveDate ? goLiveDate.getTime() <= nowTs : false;
+
   const [signedVideoUrl, setSignedVideoUrl] = useState<string>("");
   const [isPlayingLoading, setIsPlayingLoading] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTs(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const handlePlayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -300,6 +315,73 @@ export default function VideoCard({
         <p className="text-muted-foreground text-sm line-clamp-2 mb-4 leading-relaxed h-10">
           {video.description || "No description provided"}
         </p>
+
+        {/* Timeline View */}
+        {showTimeline && video.createdAt && (
+          <div className="mb-4 p-3 bg-secondary/20 rounded-lg border border-border/40">
+            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Timeline</div>
+            <div className="flex items-center gap-1 text-[10px]">
+              <div className="flex items-center gap-1 px-2 py-1 rounded bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                <FileVideo className="w-3 h-3" />
+                <span>Uploaded</span>
+              </div>
+              <div className="w-4 h-px bg-border" />
+              {video.status === 'ai_processing' || video.status === 'editing_in_progress' ? (
+                <>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                    <Bot className="w-3 h-3 animate-pulse" />
+                    <span>Processing</span>
+                  </div>
+                  <div className="w-4 h-px bg-border" />
+                </>
+              ) : null}
+              {video.status === 'pending' || video.status === 'approved' || video.status === 'uploaded' ? (
+                <>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                    <Clock className="w-3 h-3" />
+                    <span>Review</span>
+                  </div>
+                  <div className="w-4 h-px bg-border" />
+                </>
+              ) : null}
+              {video.status === 'approved' ? (
+                <>
+                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                    <CheckCircle className="w-3 h-3" />
+                    <span>Approved</span>
+                  </div>
+                  <div className="w-4 h-px bg-border" />
+                </>
+              ) : null}
+              {video.status === 'uploaded' ? (
+                <div className="flex items-center gap-1 px-2 py-1 rounded bg-red-500/10 text-red-500 border border-red-500/20">
+                  <Youtube className="w-3 h-3" />
+                  <span>Live on YT</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30 text-muted-foreground border border-border/30">
+                  <Youtube className="w-3 h-3" />
+                  <span>Pending</span>
+                </div>
+              )}
+            </div>
+            {goLiveDate && (
+              <div className="mt-2 flex items-center gap-2 text-[11px] text-foreground">
+                <Clock className="w-3 h-3 text-muted-foreground" />
+                <span>
+                  {isLive
+                    ? `Live on YouTube since ${goLiveDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : `Goes live at ${goLiveDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${minutesToLive !== null ? ` (${minutesToLive}m)` : ""}`}
+                </span>
+              </div>
+            )}
+            {video.updatedAt && (
+              <div className="mt-2 text-[9px] text-muted-foreground/60">
+                Last update: {new Date(video.updatedAt).toLocaleString()}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Assigned Editor Badge */}
         {video.editorId && typeof video.editorId === 'object' && showActions && (

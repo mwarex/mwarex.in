@@ -43,6 +43,20 @@ class AIController extends BaseController {
         }
     }
 
+    async analyzeVideo(req, res) {
+        try {
+            const { videoUrl, title, description, videoId } = req.body;
+            if (!videoUrl) {
+                throw { status: 400, message: "Video URL required" };
+            }
+            
+            const result = await this.aiService.analyzeVideo(videoUrl, title, description, videoId, req.io);
+            return this.success(res, result);
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
     async chat(req, res) {
         try {
             const { messages } = req.body;

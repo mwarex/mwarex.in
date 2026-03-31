@@ -140,76 +140,64 @@ class VideoController extends BaseController {
                     userId: req.userId,
                 });
                 
-                // ── AI AGENT INTEGRATION: Send raw video to Python Engine (Background) ──
+                // ── MOCK AI PROCESSING (No real AI, just simulate) ──
                 if (!editorId) {
-                    const pythonUrl = process.env.PYTHON_API_URL || "http://localhost:5001";
+                    const VideoModel = require("../models/video");
                     
-                    if (global.fetch) {
-                        // Run in background so UI doesn't freeze waiting for retries
-                        (async () => {
-                            try {
-                                let aiSuccess = false;
-                                let retryCount = 0;
-                                let lastError = null;
-                                const maxRetries = 3;
+                    // Run mock processing in background
+                    (async () => {
+                        try {
+                            video.status = "ai_processing";
+                            video.aiProgress = { percent: 0, message: "Starting AI analysis..." };
+                            await video.save();
+                            
+                            if (global.io && roomId) {
+                                global.io.to(`room_${roomId.toString()}`).emit("video_progress", {
+                                    videoId: video._id.toString(),
+                                    percent: 10,
+                                    message: "Analyzing video content..."
+                                });
+                            }
 
-                                while (retryCount < maxRetries && !aiSuccess) {
-                                    try {
-                                        const response = await global.fetch(`${pythonUrl}/process_video`, {
-                                            method: "POST",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({
-                                                videoId: video._id,
-                                                fileUrl: video.rawFileUrl || video.fileUrl,
-                                                aiPrompt: description || "Auto Edit"
-                                            })
-                                        });
-                                        
-                                        if (!response.ok) {
-                                            throw new Error(`AI Engine returned status ${response.status}`);
-                                        }
-                                        aiSuccess = true;
-                                    } catch (err) {
-                                        lastError = err;
-                                        retryCount++;
-                                        if (retryCount < maxRetries) {
-                                            console.log(`[AI Engine] Attempt ${retryCount} failed. Retrying in 5s... (${err.message})`);
-                                            await new Promise(res => setTimeout(res, 5000));
-                                        }
-                                    }
-                                }
-
-                                if (!aiSuccess) {
-                                    throw lastError;
-                                }
-
-                                // If success, update state
-                                video.status = "ai_processing";
-                                video.aiProgress = { percent: 0, message: "Connected to AI Engine instance..." };
+                            // Simulate AI processing steps
+                            for (let i = 20; i <= 80; i += 20) {
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                                video.aiProgress = { 
+                                    percent: i, 
+                                    message: i < 50 ? "Detecting scenes and audio..." : "Generating edit suggestions..." 
+                                };
                                 await video.save();
-
+                                
                                 if (global.io && roomId) {
-                                    global.io.to(`room_${roomId.toString()}`).emit("video_updated", {
-                                        videoId: video._id,
-                                        status: "ai_processing"
-                                    });
-                                }
-
-                            } catch (netErr) {
-                                console.error("AI Engine network err:", netErr.message);
-                                video.status = "raw_rejected";
-                                video.rejectionReason = `AI Engine Error: ${netErr.message}`;
-                                await video.save();
-
-                                if (global.io && roomId) {
-                                    global.io.to(`room_${roomId.toString()}`).emit("video_updated", {
-                                        videoId: video._id,
-                                        status: "raw_rejected"
+                                    global.io.to(`room_${roomId.toString()}`).emit("video_progress", {
+                                        videoId: video._id.toString(),
+                                        percent: i,
+                                        message: video.aiProgress.message
                                     });
                                 }
                             }
-                        })();
-                    }
+
+                            // Complete mock processing - use the original file as "edited"
+                            video.status = "pending";
+                            video.fileUrl = video.rawFileUrl;
+                            video.aiProgress = { percent: 100, message: "AI Processing Complete!" };
+                            await video.save();
+
+                            if (global.io && roomId) {
+                                global.io.to(`room_${roomId.toString()}`).emit("video_progress", {
+                                    videoId: video._id.toString(),
+                                    percent: 100,
+                                    message: "AI Processing Complete!"
+                                });
+                                global.io.to(`room_${roomId.toString()}`).emit("video_updated", {
+                                    videoId: video._id,
+                                    status: "pending"
+                                });
+                            }
+                        } catch (err) {
+                            console.error("Mock AI processing error:", err.message);
+                        }
+                    })();
                 }
                 
             } else {

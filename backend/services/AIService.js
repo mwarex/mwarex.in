@@ -1,39 +1,52 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require("axios");
 
 class AIService {
     constructor() {
-        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "dummy_key");
+        this.useMock = true; 
     }
 
     getModel(modelName = "gemini-1.5-flash") {
-        return this.genAI.getGenerativeModel({ model: modelName });
+        return null;
+    }
+
+    mockAnalyzeVideo(videoUrl, title, description) {
+        const mockResults = {
+            status: "analyzed",
+            analysis: {
+                suggestedCuts: Math.floor(Math.random() * 10) + 5,
+                detectedSilence: Math.floor(Math.random() * 30) + 10,
+                contentScore: Math.floor(Math.random() * 20) + 80,
+                bestMoments: [
+                    { timestamp: 15, reason: "High engagement moment" },
+                    { timestamp: 45, reason: "Interesting visual" },
+                    { timestamp: 120, reason: "Good audio quality" }
+                ],
+                suggestedEdits: [
+                    "Cut silence at 0:15-0:22",
+                    "Remove filler words at 1:05",
+                    "Add transition at 2:30"
+                ],
+                estimatedDuration: Math.floor(Math.random() * 300) + 180,
+                thumbnailSuggestion: `https://image.pollinations.ai/prompt/${encodeURIComponent(title || 'video thumbnail')}`
+            },
+            processingTime: "45 seconds",
+            editedFileUrl: videoUrl,
+            isMockAnalysis: true
+        };
+        return mockResults;
     }
 
     async generateTitles(keywords) {
-        try {
-            const model = this.getModel();
-            const prompt = `Generate 5 catchy, viral YouTube video titles for a video about: "${keywords}". 
-    Return ONLY a JSON array of strings. Example: ["Title 1", "Title 2"]. Do not add markdown formatting.`;
-
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            let text = response.text();
-            text = text.replace(/```json/g, "").replace(/```/g, "").trim();
-            return { titles: JSON.parse(text) };
-        } catch (error) {
-            console.error("AI Title Gen Error:", error.message);
-            return {
-                titles: [
-                    `The Ultimate Guide to ${keywords}`,
-                    `Why Everyone is Talking About ${keywords}`,
-                    `I Tried ${keywords} and You Won't Believe This`,
-                    `Stop Doing ${keywords} Wrong!`,
-                    `10 Secrets About ${keywords}`,
-                ],
-                isFallback: true,
-            };
-        }
+        return {
+            titles: [
+                `The Ultimate Guide to ${keywords}`,
+                `Why Everyone is Talking About ${keywords}`,
+                `I Tried ${keywords} and You Won't Believe This`,
+                `Stop Doing ${keywords} Wrong!`,
+                `10 Secrets About ${keywords}`,
+            ],
+            isMock: true,
+        };
     }
 
     async generateThumbnailPrompts(topic) {
@@ -60,7 +73,12 @@ class AIService {
     }
 
     async generateThumbnails(topic) {
-        const prompts = await this.generateThumbnailPrompts(topic);
+        const prompts = [
+            `Youtube thumbnail of ${topic}, high quality, 4k, vibrant colors`,
+            `Cinematic shot of ${topic}, dramatic lighting, hyperrealistic`,
+            `Minimalist design of ${topic}, vector art style, clean background`,
+            `Close-up excessive detail of ${topic}, professional photography`,
+        ];
 
         return prompts.map((p) => {
             const seed = Math.floor(Math.random() * 1000000);
@@ -76,6 +94,25 @@ class AIService {
         if (title && title.length > 20 && title.length < 60) score += 10;
         if (description && description.length > 100) score += 10;
         return Math.min(score, 100);
+    }
+
+    async analyzeVideo(videoUrl, title, description, videoId, io) {
+        const roomId = videoId ? videoId.toString().slice(-8) : "default";
+        
+        for (let i = 0; i <= 100; i += 10) {
+            if (io && roomId) {
+                io.to(`room_${roomId}`).emit("video_progress", {
+                    videoId: videoId || "unknown",
+                    percent: i,
+                    message: i < 30 ? "Analyzing video content..." : 
+                             i < 60 ? "Detecting scenes and audio..." :
+                             i < 90 ? "Generating edit suggestions..." : "Finalizing analysis..."
+                });
+            }
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        return this.mockAnalyzeVideo(videoUrl, title, description);
     }
 
     async chat(messages) {

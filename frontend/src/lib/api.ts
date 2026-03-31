@@ -1,6 +1,8 @@
 import axios from "axios";
+import { fakeAnalyzeVideo } from "./fakeGeminiProxy";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const USE_FAKE_GEMINI_PROXY = (process.env.NEXT_PUBLIC_FAKE_GEMINI_PROXY ?? "true") !== "false";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -122,6 +124,8 @@ export const aiAPI = {
   generateThumbnails: (data: { topic: string }) => api.post("/api/v1/ai/generate-thumbnails", data),
   analyzeScore: (data: { title: string; description: string }) => api.post("/api/v1/ai/analyze-score", data),
   chat: (data: { messages: { role: string; text: string }[] }) => api.post("/api/v1/ai/chat", data),
+  analyzeVideo: (data: { videoUrl: string; title?: string; description?: string; videoId?: string }) => 
+    USE_FAKE_GEMINI_PROXY ? fakeAnalyzeVideo(data) : api.post("/api/v1/ai/analyze-video", data),
 };
 
 // User APIs

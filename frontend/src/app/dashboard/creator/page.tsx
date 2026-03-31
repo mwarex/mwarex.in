@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -51,6 +51,7 @@ import { S3UploadModal } from "@/components/S3UploadModal";
 import CreatorProjectsView from "@/components/CreatorProjectsView";
 import FutureFeatures from "@/components/FutureFeatures";
 import AIPipeline from "@/components/AIPipeline";
+import { runFakeGeminiProxy } from "@/lib/fakeGeminiProxy";
 
 interface Video {
   _id: string;
@@ -63,11 +64,35 @@ interface Video {
   editorRejectionReason?: string;
   rawFileUrl?: string;
   editorId?: { _id: string; name: string; email: string } | string;
+  aiProgress?: { percent: number; message: string };
+  goLiveAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+type VideoOverride = {
+  status?: Video["status"];
+  editedUrl?: string;
+  aiProgress?: { percent: number; message: string };
+  goLiveAt?: string;
+};
+
+const statusPriority: Record<Video["status"], number> = {
+  raw_uploaded: 1,
+  ai_processing: 2,
+  editing_in_progress: 3,
+  pending: 4,
+  approved: 5,
+  uploaded: 6,
+  rejected: 6,
+};
 
 export default function CreatorDashboard() {
   const router = useRouter();
   const [videos, setVideos] = useState<Video[]>([]);
+  const [localOverrides, setLocalOverrides] = useState<Record<string, VideoOverride>>({});
+  const geminiInFlight = useRef<Set<string>>(new Set());
+  const geminiCancels = useRef<Record<string, () => void>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"pending" | "all" | "raw_uploaded">("pending");
   const [activeView, setActiveView] = useState<"dashboard" | "marketplace" | "future" | "pipeline">("dashboard");
@@ -226,7 +251,11 @@ export default function CreatorDashboard() {
     if (currentRoom) formData.append("roomId", currentRoom._id);
 
     try {
-      await videoAPI.uploadRaw(formData);
+      const res = await videoAPI.uploadRaw(formData);
+      const uploadedVideo = res.data?.video;
+      if (uploadedVideo) {
+        startGeminiProxy(uploadedVideo);
+      }
       setIsUploadModalOpen(false);
       setUploadFile(null);
       setUploadTitle("");
@@ -243,6 +272,8 @@ export default function CreatorDashboard() {
     setActionLoading(id);
     try {
       await videoAPI.approve(id);
+      setLocalOverrides(prev => ({ ...prev, [id]: { ...(prev[id] || {}), status: "approved" } }));
+      scheduleGoLive(id);
       await fetchVideos();
     } catch (error) {
       console.error("Failed to approve video:", error);
@@ -348,8 +379,27 @@ export default function CreatorDashboard() {
     router.push("/");
   };
 
+  const applyOverrides = useCallback((video: Video): Video => {
+    const override = localOverrides[video._id];
+    if (!override) return video;
+
+    const resolvedStatus = override.status
+      ? (statusPriority[override.status] >= statusPriority[video.status] ? override.status : video.status)
+      : video.status;
+
+    return {
+      ...video,
+      status: resolvedStatus,
+      fileUrl: override.editedUrl || video.fileUrl || video.rawFileUrl || "",
+      aiProgress: override.aiProgress || video.aiProgress,
+      goLiveAt: override.goLiveAt || video.goLiveAt,
+    };
+  }, [localOverrides]);
+
+  const displayVideos = useMemo(() => videos.map(applyOverrides), [videos, applyOverrides]);
+
   const filteredVideos = useMemo(() => {
-    return videos.filter((video) => {
+    return displayVideos.filter((video) => {
       const matchesSearch =
         video.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         video.description?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -359,13 +409,13 @@ export default function CreatorDashboard() {
         video.status === activeTab;
       return matchesSearch && matchesTab;
     });
-  }, [videos, searchQuery, activeTab]);
+  }, [displayVideos, searchQuery, activeTab]);
 
   const stats = useMemo(
     () => [
       {
         label: "Pending",
-        value: videos.filter((v) => v.status === "pending").length,
+        value: displayVideos.filter((v) => v.status === "pending").length,
         icon: Clock,
         color: "text-amber-500",
         bg: "bg-amber-500/10",
@@ -373,7 +423,7 @@ export default function CreatorDashboard() {
       },
       {
         label: "AI Processing",
-        value: videos.filter((v) => v.status === "raw_uploaded" || v.status === "ai_processing" || v.status === "editing_in_progress").length,
+        value: displayVideos.filter((v) => v.status === "raw_uploaded" || v.status === "ai_processing" || v.status === "editing_in_progress").length,
         icon: Bot,
         color: "text-blue-500",
         bg: "bg-blue-500/10",
@@ -381,7 +431,7 @@ export default function CreatorDashboard() {
       },
       {
         label: "Approved",
-        value: videos.filter((v) => v.status === "approved").length,
+        value: displayVideos.filter((v) => v.status === "approved").length,
         icon: CheckCircle,
         color: "text-emerald-500",
         bg: "bg-emerald-500/10",
@@ -389,7 +439,7 @@ export default function CreatorDashboard() {
       },
       {
         label: "Published",
-        value: videos.filter((v) => v.status === "uploaded").length,
+        value: displayVideos.filter((v) => v.status === "uploaded").length,
         icon: Youtube,
         color: "text-red-500",
         bg: "bg-red-500/10",
@@ -397,15 +447,123 @@ export default function CreatorDashboard() {
       },
       {
         label: "Rejected",
-        value: videos.filter((v) => v.status === "rejected").length,
+        value: displayVideos.filter((v) => v.status === "rejected").length,
         icon: XCircle,
         color: "text-zinc-400",
         bg: "bg-zinc-500/10",
         border: "border-zinc-500/20",
       },
     ],
-    [videos]
+    [displayVideos]
   );
+
+  const startGeminiProxy = useCallback((video: Video) => {
+    if (!video?._id) return;
+    if (video.editorId) return; // skip when a human editor is assigned
+    if (geminiInFlight.current.has(video._id)) return;
+
+    const sourceUrl = video.rawFileUrl || video.fileUrl || "";
+    if (!sourceUrl) return;
+
+    geminiInFlight.current.add(video._id);
+
+    setLocalOverrides(prev => ({
+      ...prev,
+      [video._id]: {
+        ...(prev[video._id] || {}),
+        status: "ai_processing",
+        editedUrl: sourceUrl,
+        aiProgress: { percent: 10, message: "Gemini proxy: starting analysis" },
+      }
+    }));
+
+    setAiProgressMap(prev => ({
+      ...prev,
+      [video._id]: { percent: 10, message: "Gemini proxy: starting analysis" }
+    }));
+
+    const cancel = runFakeGeminiProxy({
+      videoId: video._id,
+      sourceUrl,
+      onProgress: ({ percent, message }) => {
+        setAiProgressMap(prev => ({ ...prev, [video._id]: { percent, message } }));
+        setLocalOverrides(prev => ({
+          ...prev,
+          [video._id]: {
+            ...(prev[video._id] || {}),
+            status: percent < 100 ? "ai_processing" : "pending",
+            editedUrl: sourceUrl,
+            aiProgress: percent < 100 ? { percent, message } : undefined,
+          }
+        }));
+      },
+      onComplete: (result) => {
+        setAiProgressMap(prev => {
+          const next = { ...prev };
+          delete next[video._id];
+          return next;
+        });
+        setLocalOverrides(prev => ({
+          ...prev,
+          [video._id]: {
+            ...(prev[video._id] || {}),
+            status: "pending",
+            editedUrl: result.editedUrl || sourceUrl,
+            aiProgress: undefined,
+          }
+        }));
+        geminiInFlight.current.delete(video._id);
+      }
+    });
+
+    geminiCancels.current[video._id] = cancel;
+  }, []);
+
+  const scheduleGoLive = useCallback((videoId: string, minutes = 10) => {
+    const goLiveAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+
+    setLocalOverrides(prev => ({
+      ...prev,
+      [videoId]: { ...(prev[videoId] || {}), goLiveAt }
+    }));
+
+    setVideos(prev => prev.map(v => v._id === videoId ? { ...v, goLiveAt } : v));
+
+    setYtProgressMap(prev => ({
+      ...prev,
+      [videoId]: {
+        percent: 5,
+        message: `Queued for YouTube — goes live at ${new Date(goLiveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+      }
+    }));
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      Object.values(geminiCancels.current).forEach((cancel) => cancel?.());
+    };
+  }, []);
+
+  useEffect(() => {
+    const shouldSimulateGemini = (video: Video) => {
+      if (!video?._id || video.editorId) return false;
+      if (geminiInFlight.current.has(video._id)) return false;
+
+      const needsAutoEdit =
+        video.status === "raw_uploaded" ||
+        video.status === "ai_processing" ||
+        (video.status === "editing_in_progress" && !video.fileUrl) ||
+        (!video.fileUrl && !!video.rawFileUrl);
+
+      return needsAutoEdit;
+    };
+
+    displayVideos.forEach((video) => {
+      if (shouldSimulateGemini(video)) {
+        startGeminiProxy(video);
+      }
+    });
+  }, [displayVideos, startGeminiProxy]);
 
   useEffect(() => {
     if (currentRoom) {
@@ -437,6 +595,15 @@ export default function CreatorDashboard() {
           setAiProgressMap(prev => ({
             ...prev,
             [data.videoId]: { percent: data.percent, message: data.message || "Processing..." }
+          }));
+
+          setLocalOverrides(prev => ({
+            ...prev,
+            [data.videoId]: {
+              ...(prev[data.videoId] || {}),
+              status: data.percent === 100 ? "pending" : "ai_processing",
+              aiProgress: data.percent === 100 ? undefined : { percent: data.percent, message: data.message || "Processing..." },
+            }
           }));
 
           // Auto-remove the AI banner 6 seconds after completing
@@ -471,6 +638,12 @@ export default function CreatorDashboard() {
 
           // Auto-remove the YouTube banner 6 seconds after completing
           if (data.percent === 100) {
+            const liveAt = new Date().toISOString();
+            setLocalOverrides(prev => ({
+              ...prev,
+              [data.videoId]: { ...(prev[data.videoId] || {}), goLiveAt: prev[data.videoId]?.goLiveAt || liveAt }
+            }));
+
             setTimeout(() => {
               setYtProgressMap(prev => {
                 const newMap = { ...prev };
@@ -717,10 +890,10 @@ export default function CreatorDashboard() {
 
           <div className="flex items-center gap-2">
             <SeasonSwitcher />
-            {videos.filter(v => v.status === 'pending').length > 0 && (
+            {displayVideos.filter(v => v.status === 'pending').length > 0 && (
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-amber-600 dark:text-amber-400">
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                {videos.filter(v => v.status === 'pending').length} pending
+                {displayVideos.filter(v => v.status === 'pending').length} pending
               </div>
             )}
           </div>
@@ -910,7 +1083,7 @@ export default function CreatorDashboard() {
               className="mb-6"
             >
               {Object.entries(ytProgressMap).map(([videoId, progress]) => {
-                const processingVideo = videos.find(v => v._id === videoId);
+                const processingVideo = displayVideos.find(v => v._id === videoId);
                 const isComplete = progress.percent === 100;
                 
                 return (
@@ -971,7 +1144,7 @@ export default function CreatorDashboard() {
               className="mb-6"
             >
               {Object.entries(aiProgressMap).map(([videoId, progress]) => {
-                const processingVideo = videos.find(v => v._id === videoId);
+                const processingVideo = displayVideos.find(v => v._id === videoId);
                 return (
                   <div
                     key={videoId}
@@ -1111,6 +1284,7 @@ export default function CreatorDashboard() {
                       : undefined
                   }
                   aiProgress={aiProgressMap[video._id]}
+                  showTimeline={true}
                 />
               ))}
             </motion.div>
@@ -1507,7 +1681,10 @@ export default function CreatorDashboard() {
       <S3UploadModal
         isOpen={isS3UploadOpen}
         onClose={() => setIsS3UploadOpen(false)}
-        onSuccess={fetchVideos}
+        onSuccess={(video) => {
+          if (video) startGeminiProxy(video);
+          fetchVideos();
+        }}
         roomId={currentRoom?._id}
         isRaw={true}
         title="Upload Raw Video"

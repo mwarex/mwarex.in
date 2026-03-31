@@ -24,7 +24,7 @@ import { toast } from "sonner";
 interface S3UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess?: (video?: any) => void;
   roomId?: string;
   editorId?: string;
   isRaw?: boolean;
@@ -288,7 +288,7 @@ export function S3UploadModal({
 
       // ── Step 3: Register video in MongoDB ──────────────────────────────────
       setPhase("registering");
-      await videoAPI.registerFromS3({
+      const registerRes = await videoAPI.registerFromS3({
         fileUrl,
         s3Key: key,
         title: videoTitle.trim(),
@@ -299,9 +299,11 @@ export function S3UploadModal({
         thumbnailUrl,
       });
 
+      const registeredVideo = registerRes?.data?.video;
+
       setPhase("done");
       toast.success(isRaw ? "Raw video uploaded! Editor can now see it." : "Edited video submitted!");
-      onSuccess();
+      onSuccess?.(registeredVideo);
       handleClose();
     } catch (err: any) {
       if (err.message === "CANCELLED") {
