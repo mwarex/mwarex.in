@@ -34,7 +34,11 @@ import {
   Briefcase,
   Bot,
   Sparkles,
-  Cpu
+  Cpu,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Link2
 } from "lucide-react";
 import VideoCard from "@/components/VideoCard";
 import { videoAPI, inviteAPI, getGoogleAuthUrl, paymentAPI, userAPI, roomAPI } from "@/lib/api";
@@ -133,6 +137,7 @@ export default function CreatorDashboard() {
   const [ytProgressMap, setYtProgressMap] = useState<Record<string, { percent: number, message: string }>>({});
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'general' | 'aiConfig' | 'models' | 'integrations'>('general');
+  const [isIntegrationsOpen, setIsIntegrationsOpen] = useState(false);
 
   useEffect(() => {
     const data = getUserData();
@@ -275,7 +280,7 @@ export default function CreatorDashboard() {
     try {
       await videoAPI.approve(id);
       setLocalOverrides(prev => ({ ...prev, [id]: { ...(prev[id] || {}), status: "approved" } }));
-      scheduleGoLive(id);
+      // scheduleGoLive(id); // Using real backend socket progress instead of fake progress
       await fetchVideos();
     } catch (error) {
       console.error("Failed to approve video:", error);
@@ -844,13 +849,13 @@ export default function CreatorDashboard() {
             <span>AI Brain Settings</span>
           </button>
 
-          <a
-            href={getGoogleAuthUrl()}
+          <button
+            onClick={() => { setIsIntegrationsOpen(true); setIsSidebarOpen(false); }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
           >
-            <Youtube className="w-4 h-4" />
+            <Link2 className="w-4 h-4" />
             <span>Integrations</span>
-          </a>
+          </button>
 
           <button
             onClick={() => { setActiveView("pipeline"); setIsSidebarOpen(false); }}
@@ -1723,6 +1728,103 @@ export default function CreatorDashboard() {
         isRaw={true}
         title="Upload Raw Video"
       />
+
+      <AnimatePresence>
+        {isIntegrationsOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card border border-border rounded-xl w-full max-w-lg shadow-2xl overflow-hidden relative"
+            >
+              <button
+                onClick={() => setIsIntegrationsOpen(false)}
+                className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="p-6 pb-2">
+                <h2 className="text-2xl font-bold mb-1 tracking-tight">Integrations</h2>
+                <p className="text-sm text-muted-foreground">
+                  Connect your accounts to publish content automatically.
+                </p>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* YouTube */}
+                <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary/30">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                      <Youtube className="w-6 h-6 text-red-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">YouTube</h3>
+                      <p className="text-xs text-muted-foreground">Publish videos directly</p>
+                    </div>
+                  </div>
+                  <a
+                    href={getGoogleAuthUrl()}
+                    className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
+                  >
+                    Connect
+                  </a>
+                </div>
+
+                {/* Instagram */}
+                <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary/30 relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                      <Instagram className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Instagram</h3>
+                      <p className="text-xs text-muted-foreground">Post reels & stories</p>
+                    </div>
+                  </div>
+                  <span className="relative z-10 px-3 py-1 bg-secondary text-muted-foreground text-xs font-semibold uppercase tracking-wider rounded-full border border-border">
+                    Coming Soon
+                  </span>
+                </div>
+
+                {/* LinkedIn */}
+                <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary/30 relative overflow-hidden group">
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                      <Linkedin className="w-6 h-6 text-blue-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">LinkedIn</h3>
+                      <p className="text-xs text-muted-foreground">Share professional updates</p>
+                    </div>
+                  </div>
+                  <span className="relative z-10 px-3 py-1 bg-secondary text-muted-foreground text-xs font-semibold uppercase tracking-wider rounded-full border border-border">
+                    Coming Soon
+                  </span>
+                </div>
+
+                {/* X / Twitter */}
+                <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary/30 relative overflow-hidden group">
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-12 h-12 rounded-full bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                      <Twitter className="w-6 h-6 text-foreground" fill="currentColor" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">X (Twitter)</h3>
+                      <p className="text-xs text-muted-foreground">Share short clips & posts</p>
+                    </div>
+                  </div>
+                  <span className="relative z-10 px-3 py-1 bg-secondary text-muted-foreground text-xs font-semibold uppercase tracking-wider rounded-full border border-border">
+                    Coming Soon
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -48,14 +48,19 @@ async function uploadToYoutube(video, userId) {
     } else {
       // Track real byte progress from stream data events
       let bytesRead = 0;
+      let lastEmitTime = 0;
       streamReq.data.on("data", (chunk) => {
         bytesRead += chunk.length;
-        const progress = Math.min(Math.round((bytesRead / contentLength) * 100), 99);
-        global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
-          videoId: video._id.toString(),
-          percent: progress,
-          message: "Pushing HD chunks to YouTube Servers...",
-        });
+        const now = Date.now();
+        if (now - lastEmitTime > 500) {
+          lastEmitTime = now;
+          const progress = Math.min(Math.round((bytesRead / contentLength) * 100), 99);
+          global.io.to(`room_${video.roomId.toString()}`).emit("youtube_progress", {
+            videoId: video._id.toString(),
+            percent: progress,
+            message: "Pushing HD chunks to YouTube Servers...",
+          });
+        }
       });
     }
   }
