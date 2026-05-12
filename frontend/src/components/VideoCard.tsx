@@ -395,7 +395,7 @@ export default function VideoCard({
 
         <div className="mt-auto">
           {/* Actions - Creator View */}
-          {showActions && video.status === "pending" && (
+          {showActions && (video.status === "pending" || (video.status === "approved" && video.rejectionReason?.includes("YouTube"))) && (
             <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border/40">
               <button
                 onClick={(e) => { e.stopPropagation(); onApprove?.(video._id); }}
@@ -403,7 +403,7 @@ export default function VideoCard({
                 className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-bold uppercase tracking-wide border border-emerald-500/20 disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4" />
-                Approve
+                {video.status === "approved" ? "Retry Upload" : "Approve"}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onReject?.(video._id); }}

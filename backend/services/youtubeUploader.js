@@ -65,7 +65,8 @@ async function uploadToYoutube(video, userId) {
     }
   }
 
-  const res = await youtube.videos.insert({
+  // Wrap in a promise timeout (15 mins) to prevent BullMQ worker from hanging forever
+  const uploadPromise = youtube.videos.insert({
     part: "snippet,status",
     requestBody: {
       snippet: {
@@ -77,9 +78,15 @@ async function uploadToYoutube(video, userId) {
       },
     },
     media: {
+      mimeType: "video/mp4", // CRITICAL: Without this, googleapis stream sniffer can hang indefinitely
       body: streamReq.data,
     },
   });
+
+  const res = await Promise.race([
+    uploadPromise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("YouTube upload timed out after 15 minutes")), 900000))
+  ]);
 
   console.log(`[YT Upload] ✅ Upload complete. YouTube ID: ${res.data.id}`);
 
