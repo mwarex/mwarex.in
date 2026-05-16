@@ -2,8 +2,7 @@
 node_modules/
 .pnp
 .pnp.js
-backend/
-ai_engine/
+ 
 
 # Environment variables — NEVER commit these!
 .env

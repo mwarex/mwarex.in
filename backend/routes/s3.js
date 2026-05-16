@@ -1,0 +1,87 @@
+const router = require("express").Router();
+const { v4: uuidv4 } = require("uuid");
+const userAuth = require("../middlewares/userMiddleware");
+const { getPresignedUploadUrl, getSignedDownloadUrl } = require("../services/S3Service");
+const VideoRepository = require("../repositories/VideoRepository");
+
+/**
+ * POST /api/v1/s3/presign
+ * Returns a presigned POST URL so the browser can upload directly to S3.
+ */
+router.post("/presign", userAuth, async (req, res) => {
+    try {
+        const { filename, contentType, folder = "videos" } = req.body;
+
+        if (!filename || !contentType) {
+            return res.status(400).json({ message: "filename and contentType are required" });
+        }
+
+        const ext = filename.split(".").pop();
+        const key = `${folder}/${uuidv4()}-${Date.now()}.${ext}`;
+
+        const { url, fields } = await getPresignedUploadUrl({
+            key,
+            contentType,
+            maxSizeBytes: 10 * 1024 * 1024 * 1024, // 10 GB
+        });
+
+        const fileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION || "eu-north-1"}.amazonaws.com/${key}`;
+
+        return res.json({ url, fields, key, fileUrl });
+    } catch (err) {
+        console.error("[S3 Presign Error]", err);
+        return res.status(500).json({ message: "Failed to generate upload URL", error: err.message });
+    }
+});
+
+/**
+ * GET /api/v1/s3/signed-url?key=raw-videos/abc123.mp4
+ * Returns a temporary signed URL (1 hour) to download/stream a private S3 file.
+ * Used by the editor to download the raw video.
+ */
+router.get("/signed-url", userAuth, async (req, res) => {
+    try {
+        const { key } = req.query;
+        if (!key) return res.status(400).json({ message: "key is required" });
+
+        const signedUrl = await getSignedDownloadUrl(key);
+        return res.json({ signedUrl });
+    } catch (err) {
+        console.error("[S3 Signed URL Error]", err);
+        return res.status(500).json({ message: "Failed to generate download URL", error: err.message });
+    }
+});
+
+/**
+ * GET /api/v1/s3/download-url/:videoId?raw=true
+ * Convenience endpoint — frontend passes videoId and we look up the S3 key.
+ * raw=true → use rawFileUrl, raw=false → use fileUrl (edited)
+ */
+router.get("/download-url/:videoId", userAuth, async (req, res) => {
+    try {
+        const video = await VideoRepository.findById(req.params.videoId);
+        if (!video) return res.status(404).json({ message: "Video not found" });
+
+        const useRaw = req.query.raw === "true";
+        const fileUrl = useRaw ? (video.rawFileUrl || video.fileUrl) : video.fileUrl;
+
+        if (!fileUrl) return res.status(404).json({ message: "No file URL found for this video" });
+
+        // If it's an S3 URL, extract the key and generate a signed URL
+        if (fileUrl.includes("amazonaws.com")) {
+            const urlObj = new URL(fileUrl);
+            const key = urlObj.pathname.slice(1); // remove leading /
+            const signedUrl = await getSignedDownloadUrl(key);
+            return res.json({ signedUrl, filename: `${video.title || "video"}.mp4` });
+        }
+
+        // For Cloudinary or other URLs, return as-is
+        return res.json({ signedUrl: fileUrl, filename: `${video.title || "video"}.mp4` });
+    } catch (err) {
+        console.error("[S3 Download URL Error]", err);
+        return res.status(500).json({ message: "Failed to generate download URL", error: err.message });
+    }
+});
+
+module.exports = router;
+
