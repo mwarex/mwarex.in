@@ -209,7 +209,7 @@ def health():
     return jsonify({"status": "Multimodal Gemini AI Video Engine is ALIVE and running 🚀"})
 
 if __name__ == '__main__':
-    port = int(os.getenv("PORT", 5001))
+    port = int(os.getenv("AI_PORT", 5001))
     print(f"Starting Multimodal AI Engine on port {port}...")
     app.run(host='0.0.0.0', port=port, debug=False)
 

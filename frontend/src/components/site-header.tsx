@@ -20,9 +20,9 @@ export function SiteHeader() {
                 {/* Layout: Logo (Left) | Nav (Absolute Center) | Actions (Right) */}
                 <div className="w-full relative flex items-center justify-between">
                     {/* Left: Logo */}
-                    <Link href="/" className="z-50 hover:scale-105 transition-transform duration-300">
+                    <Link href="/" className="z-50 hover:scale-105 transition-transform duration-300" id="nav-logo-anchor">
                         <div className="flex items-center gap-2">
-                            <MWareXLogo showText={true} />
+                            <MWareXLogo showText={false} size="md" />
                         </div>
                     </Link>
 

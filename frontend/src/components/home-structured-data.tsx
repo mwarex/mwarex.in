@@ -7,7 +7,7 @@ export function HomeStructuredData() {
             "url": "https://mwarex.in",
             "logo": {
                 "@type": "ImageObject",
-                "url": "https://mwarex.in/mwarexin.png"
+                "url": "https://mwarex.in/mwarexlogo.png"
             },
             "founder": {
                 "@type": "Person",

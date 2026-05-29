@@ -8,6 +8,7 @@ import { SeasonProvider } from "@/contexts/SeasonContext";
 import { SeasonalBackground } from "@/components/seasonal-background";
 import { Toaster } from "sonner";
 import { HomeStructuredData } from "@/components/home-structured-data";
+import { ClientShell } from "@/components/client-shell";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -85,11 +86,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/mwarexin.png', type: 'image/png', media: '(prefers-color-scheme: light)' },
-      { url: '/blackmwarex.png', type: 'image/png', media: '(prefers-color-scheme: dark)' },
+      { url: '/mwarexlogo.png', type: 'image/png' },
     ],
     apple: [
-      { url: '/mwarexin.png', type: 'image/png' },
+      { url: '/mwarexlogo.png', type: 'image/png' },
     ],
   },
   manifest: '/site.webmanifest',
@@ -154,7 +154,7 @@ export default function RootLayout({
 
                   <SeasonalBackground />
                   <div className="relative z-10 flex flex-col min-h-screen">
-                    {children}
+                    <ClientShell>{children}</ClientShell>
                   </div>
                 </div>
               </SeasonProvider>

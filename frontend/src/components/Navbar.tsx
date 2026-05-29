@@ -52,8 +52,8 @@ export default function Navbar() {
           }`}
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <Link href="/" className="z-10 hover:scale-105 transition-transform duration-300">
-            <MWareXLogo />
+          <Link href="/" className="z-10 hover:scale-105 transition-transform duration-300" id="nav-logo-anchor">
+            <MWareXLogo size="md" showText={false} />
           </Link>
 
           {/* Desktop Nav */}
