@@ -14,9 +14,3 @@ jobs:
           echo "Pinging Node.js Backend..."
           STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://mwarex-backend.onrender.com/api/v1/health)
           echo "Node.js Backend Response Status Code: $STATUS_CODE"
-
-      - name: Ping Vercel Keep-Alive Route
-        run: |
-          echo "Pinging Vercel Keep-Alive Router..."
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://mwarex.in/api/keep-alive || curl -s -o /dev/null -w "%{http_code}" https://mware-x.vercel.app/api/keep-alive)
-          echo "Vercel Response Status Code: $STATUS_CODE"

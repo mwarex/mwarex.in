@@ -4,8 +4,23 @@ import { useState } from "react";
 import { CinematicIntro } from "@/components/cinematic-intro";
 import { motion } from "framer-motion";
 
+import { usePathname } from "next/navigation";
+
 export function ClientShell({ children }: { children: React.ReactNode }) {
   const [contentVisible, setContentVisible] = useState(false);
+  const pathname = usePathname();
+
+  const isDashboard = (pathname ? pathname.startsWith("/dashboard") : false) ||
+                      (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard"));
+
+  // Bypass cinematic intro completely when browsing the workspace dashboard
+  if (isDashboard) {
+    return (
+      <div className="w-full min-h-screen flex flex-col">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <>
