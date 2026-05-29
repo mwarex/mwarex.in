@@ -15,6 +15,7 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
         animate={contentVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
         transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] as any }}
         className="w-full min-h-screen flex flex-col"
+        style={{ opacity: 0 }}
       >
         {children}
       </motion.div>

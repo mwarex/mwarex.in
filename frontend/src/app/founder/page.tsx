@@ -84,8 +84,28 @@ export default function FounderPage() {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
             />
 
-            <main className="min-h-screen py-20 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-4xl mx-auto">
+            <main className="min-h-screen py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[#070707]">
+                {/* Premium Background image matching the "Replacing the Fragmented Workflow" section */}
+                <div className="absolute inset-0 pointer-events-none z-0">
+                    <img 
+                        src="/bg-images/10037.jpg" 
+                        alt="Background" 
+                        className="absolute inset-0 w-full h-full object-cover opacity-15 md:opacity-20"
+                        style={{
+                            maskImage: 'radial-gradient(ellipse at center, black 0%, transparent 80%)',
+                            WebkitMaskImage: 'radial-gradient(ellipse at center, black 0%, transparent 80%)'
+                        }}
+                    />
+                    <div className="absolute inset-0 bg-[#070707]/60 mix-blend-multiply" />
+                    {/* Subtle grid pattern matching the main tech-aesthetic */}
+                    <div className="absolute inset-0 opacity-[0.05]" style={{
+                      backgroundImage: 'linear-gradient(rgba(200,169,126,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.1) 1px, transparent 1px)',
+                      backgroundSize: '50px 50px',
+                    }} />
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#070707] via-transparent to-[#070707]"></div>
+                </div>
+
+                <div className="max-w-4xl mx-auto relative z-10">
                     {/* Back Link */}
                     <Link
                         href="/"

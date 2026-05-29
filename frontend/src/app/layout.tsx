@@ -116,7 +116,7 @@ export default function RootLayout({
           <OnboardingProvider>
             <SmoothScrollProvider>
               <SeasonProvider>
-                <div className="min-h-screen w-full relative bg-[#111111] text-[#fafafa]">
+                <div className="min-h-screen w-full relative bg-[#070707] text-[#fafafa]">
                   {/* Subtle noise texture over pure dark background */}
                   <div className="absolute inset-0 pointer-events-none opacity-20 filter contrast-[120%] z-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'1.5\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
 

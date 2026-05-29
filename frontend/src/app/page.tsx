@@ -253,7 +253,7 @@ export default function LandingPage() {
                 <h4 className="font-semibold text-white/90 mb-4 text-xs tracking-[0.2em] uppercase">Resources</h4>
                 <ul className="space-y-3 text-white/50 text-xs tracking-wide">
                   <FooterLink href="#">API Reference</FooterLink>
-                  <FooterLink href="#">Support</FooterLink>
+                  <FooterLink href="/support">Support</FooterLink>
                 </ul>
               </div>
 

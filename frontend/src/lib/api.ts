@@ -262,6 +262,12 @@ export const feedbackAPI = {
   getFeedbacks: () => api.get("/api/v1/feedback"),
 };
 
+// Support APIs
+export const supportAPI = {
+  submitTicket: (data: { name: string; email: string; message: string }) =>
+    api.post("/api/v1/support", data),
+};
+
 // Razorpay Key for frontend
 export const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_S9APuUYcsOCve3";
 

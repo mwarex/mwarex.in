@@ -18,7 +18,7 @@ export default function Footer() {
       { label: 'About', href: '/about' },
       { label: 'Blog', href: '/blog' },
       { label: 'Careers', href: '/careers' },
-      { label: 'Contact', href: '/contact' },
+      { label: 'Contact', href: '/support' },
     ],
     legal: [
       { label: 'Privacy', href: '/privacy-policy' },
