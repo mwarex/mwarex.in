@@ -13,14 +13,23 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
   const isLanding = (pathname === "/") ||
                     (typeof window !== "undefined" && window.location.pathname === "/");
 
-  // Only show the cinematic intro on the main landing page (home route)
-  if (!isLanding) {
+  const hasPlayedIntro = typeof window !== "undefined" && sessionStorage.getItem("mwarex_intro_played") === "true";
+
+  // Only show the cinematic intro on the main landing page (home route) and only once per session
+  if (!isLanding || hasPlayedIntro) {
     return (
       <div className="w-full min-h-screen flex flex-col">
         {children}
       </div>
     );
   }
+
+  const handleComplete = () => {
+    setContentVisible(true);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("mwarex_intro_played", "true");
+    }
+  };
 
   return (
     <>
@@ -37,7 +46,7 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
 
       <CinematicIntro 
         onZoomStart={() => setContentVisible(true)}
-        onComplete={() => setContentVisible(true)} // Safeguard to ensure page is visible
+        onComplete={handleComplete}
       />
     </>
   );
