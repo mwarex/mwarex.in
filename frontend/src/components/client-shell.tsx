@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 export function ClientShell({ children }: { children: React.ReactNode }) {
   const [contentVisible, setContentVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [hasPlayedIntro, setHasPlayedIntro] = useState(true); // default to true to prevent server mismatch and content flash
+  const [hasPlayedIntro, setHasPlayedIntro] = useState(false); // default to false to allow initial render matching server
 
   useEffect(() => {
     setMounted(true);
@@ -24,15 +24,6 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
     setHasPlayedIntro(true);
   };
 
-  // On the server or if already played in the current session, render immediately
-  if (!mounted || hasPlayedIntro) {
-    return (
-      <div className="w-full min-h-screen flex flex-col">
-        {children}
-      </div>
-    );
-  }
-
   return (
     <>
       {/* Wrap page content to smoothly fade and slide in during the intro's zoom phase */}
@@ -46,10 +37,13 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
         {children}
       </motion.div>
 
-      <CinematicIntro 
-        onZoomStart={() => setContentVisible(true)}
-        onComplete={handleComplete}
-      />
+      {/* Only render CinematicIntro on client side when not yet played */}
+      {mounted && !hasPlayedIntro && (
+        <CinematicIntro 
+          onZoomStart={() => setContentVisible(true)}
+          onComplete={handleComplete}
+        />
+      )}
     </>
   );
 }
