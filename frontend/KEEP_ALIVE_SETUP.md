@@ -27,25 +27,39 @@ A cron job is configured in `vercel.json` that pings your backend every 14 minut
 
 ### Vercel Cron Limits (Free Tier):
 - 2 cron jobs
-- Runs once per day to once per hour (But Vercel's "Hobby" plan allows */14 minute intervals)
-- If you're on the free tier and 14-minute intervals don't work, use the external service below
+- Vercel's Hobby free tier limits crons to **at most 2 runs per day**! It does not support a high-frequency interval (like every 14 minutes) on the free plan, which is why it spins down. If you need it for free, use Option 2 or Option 3 below!
 
 ---
 
-## 2. External Cron Service (Backup - Free)
+## 2. GitHub Actions Cron Job (NEW - Recommended & 100% Free)
 
-If Vercel's cron doesn't work on free tier, use one of these free services:
+We have created an automated GitHub Actions workflow in `.github/workflows/keep-alive.yml`. This runs on GitHub's secure servers in the cloud completely for free!
 
-### Option A: cron-job.org (Recommended)
+### How it works:
+- GitHub runs the workflow automatically **every 10 minutes** (`*/10 * * * *`).
+- It triggers a `curl` ping request directly to your Node.js backend health check endpoint.
+- Since it runs every 10 minutes, your Render container never has 15 minutes of inactivity and **stays awake 24/7**!
+
+### Actions Setup:
+1. Push this code to your GitHub repository (`git push`).
+2. Go to your GitHub Repository → **Actions** tab to verify that the `Keep MwareX Render Backend Awake` workflow is active!
+
+---
+
+## 3. External Cron Service (Backup - Free)
+
+If Vercel's cron doesn't run frequently enough and you want a secondary backup to GitHub Actions, you can use these free services:
+
+### Option A: cron-job.org
 1. Go to https://cron-job.org
 2. Create a free account
 3. Create a new cron job:
    - **URL**: `https://mwarex-backend.onrender.com/api/v1/health`
-   - **Schedule**: Every 14 minutes (Custom: `*/14 * * * *`)
+   - **Schedule**: Every 10 minutes (Custom: `*/10 * * * *`)
    - **Request Method**: GET
 4. Enable the job
 
-### Option B: UptimeRobot (Also Free)
+### Option B: UptimeRobot
 1. Go to https://uptimerobot.com
 2. Create a free account
 3. Add a new monitor:
@@ -54,21 +68,11 @@ If Vercel's cron doesn't work on free tier, use one of these free services:
    - **Monitoring Interval**: 5 minutes (minimum on free tier)
 4. This will ping your server every 5 minutes
 
-### Option C: Freshping
-1. Go to https://www.freshworks.com/website-monitoring/
-2. Free plan includes 50 monitors
-3. Set up similar to UptimeRobot
-
 ---
 
-## 3. Frontend Loading Modal (Fallback)
+## 4. Frontend Loading Modal (Fallback)
 
 Even if the server does go to sleep, users will see a beautiful branded loading screen instead of Render's ugly one.
-
-### Files:
-- `src/app/auth/signin/page.tsx` - Sign in page with loading modal
-- `src/app/auth/signup/page.tsx` - Sign up page with loading modal
-- `src/lib/api.ts` - `warmAndRedirectToGoogle()` function
 
 ---
 
@@ -81,18 +85,18 @@ curl https://mwarex-backend.onrender.com/api/v1/health
 
 ### Test keep-alive endpoint (after deployment):
 ```bash
-curl https://www.mwarex.in/api/keep-alive
+curl https://mwarex.in/api/keep-alive
 ```
 
 ---
 
 ## Summary
 
-| Method | Frequency | Free? | Auto? |
-|--------|-----------|-------|-------|
-| Vercel Cron | Every 14 min | Yes (Hobby) | Yes |
-| cron-job.org | Every 14 min | Yes | Yes |
-| UptimeRobot | Every 5 min | Yes | Yes |
-| Loading Modal | N/A | N/A | Fallback |
+| Method | Frequency | Free? | Auto? | Status |
+|--------|-----------|-------|-------|--------|
+| GitHub Actions | Every 10 min | Yes | Yes | **Primary & Recommended** |
+| Vercel Cron | 2x per day (Hobby) | Yes | Yes | Throttled on Free plan |
+| cron-job.org | Every 10 min | Yes | Yes | Great backup |
+| UptimeRobot | Every 5 min | Yes | Yes | Great backup |
 
 With these in place, your users will **never** see the Render cold start screen! 🎉
