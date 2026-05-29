@@ -54,7 +54,11 @@ export function SiteHeader() {
                                 className="ml-4 text-white hover:text-[#C8A97E] transition-colors p-2"
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             >
-                                <Menu className="w-5 h-5" strokeWidth={1.5} />
+                                {isMobileMenuOpen ? (
+                                    <X className="w-5 h-5" strokeWidth={1.5} />
+                                ) : (
+                                    <Menu className="w-5 h-5" strokeWidth={1.5} />
+                                )}
                             </button>
                         </div>
 
@@ -86,12 +90,6 @@ export function SiteHeader() {
                             <Link href="/auth/signin" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white mt-4 border-t border-white/10 pt-8 w-full text-center">Log In</Link>
                             <Link href="/auth/signup" onClick={() => setIsMobileMenuOpen(false)} className="text-[#00E5FF] px-8 py-3 rounded-full mt-4 border border-[#00E5FF]/30">Register</Link>
                         </nav>
-                        <button
-                            className="absolute top-8 right-8 text-white p-2"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                            <X className="w-6 h-6" strokeWidth={1.5} />
-                        </button>
                     </motion.div>
                 )}
             </AnimatePresence>
