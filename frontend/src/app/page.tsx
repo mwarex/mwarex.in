@@ -15,10 +15,12 @@ import { LandingPageOnboarding } from "@/components/onboarding";
 import { ComparisonSection } from "@/components/comparison-section";
 import { CrackedButton } from "@/components/cracked-button";
 import { FounderSection } from "@/components/founder-section";
+import { ClientShell } from "@/components/client-shell";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen text-[#fafafa] font-sans bg-[#111111] relative overflow-hidden w-full selection:bg-[#C8A97E]/30 selection:text-[#ffffff]">
+    <ClientShell>
+      <div className="min-h-screen text-[#fafafa] font-sans bg-[#111111] relative overflow-hidden w-full selection:bg-[#C8A97E]/30 selection:text-[#ffffff]">
       <div className="relative z-10 w-full">
         <SiteHeader />
 
@@ -283,6 +285,7 @@ export default function LandingPage() {
         </footer>
       </div>
     </div>
+    </ClientShell>
   );
 }
 

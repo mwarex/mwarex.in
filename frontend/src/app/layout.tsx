@@ -8,7 +8,6 @@ import { SeasonProvider } from "@/contexts/SeasonContext";
 import { SeasonalBackground, FloatingAmbientSwitcher } from "@/components/seasonal-background";
 import { Toaster } from "sonner";
 import { HomeStructuredData } from "@/components/home-structured-data";
-import { ClientShell } from "@/components/client-shell";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -155,7 +154,7 @@ export default function RootLayout({
                   <SeasonalBackground />
                   <FloatingAmbientSwitcher />
                   <div className="relative z-10 flex flex-col min-h-screen">
-                    <ClientShell>{children}</ClientShell>
+                    {children}
                   </div>
                 </div>
               </SeasonProvider>

@@ -1,35 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CinematicIntro } from "@/components/cinematic-intro";
 import { motion } from "framer-motion";
 
-import { usePathname } from "next/navigation";
-
 export function ClientShell({ children }: { children: React.ReactNode }) {
   const [contentVisible, setContentVisible] = useState(false);
-  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  const [hasPlayedIntro, setHasPlayedIntro] = useState(true); // default to true to prevent server mismatch and content flash
 
-  const isLanding = (pathname === "/") ||
-                    (typeof window !== "undefined" && window.location.pathname === "/");
+  useEffect(() => {
+    setMounted(true);
+    const played = sessionStorage.getItem("mwarex_intro_played") === "true";
+    setHasPlayedIntro(played);
+    if (played) {
+      setContentVisible(true);
+    }
+  }, []);
 
-  const hasPlayedIntro = typeof window !== "undefined" && sessionStorage.getItem("mwarex_intro_played") === "true";
+  const handleComplete = () => {
+    setContentVisible(true);
+    sessionStorage.setItem("mwarex_intro_played", "true");
+    setHasPlayedIntro(true);
+  };
 
-  // Only show the cinematic intro on the main landing page (home route) and only once per session
-  if (!isLanding || hasPlayedIntro) {
+  // On the server or if already played in the current session, render immediately
+  if (!mounted || hasPlayedIntro) {
     return (
       <div className="w-full min-h-screen flex flex-col">
         {children}
       </div>
     );
   }
-
-  const handleComplete = () => {
-    setContentVisible(true);
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("mwarex_intro_played", "true");
-    }
-  };
 
   return (
     <>
