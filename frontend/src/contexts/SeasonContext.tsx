@@ -18,7 +18,7 @@ export function SeasonProvider({ children }: { children: React.ReactNode }) {
                         (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard"));
 
     const [publicSeason, setPublicSeason] = useState<Season>('none');
-    const [dashboardSeason, setDashboardSeason] = useState<Season>('autumn');
+    const [dashboardSeason, setDashboardSeason] = useState<Season>('none');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -33,7 +33,7 @@ export function SeasonProvider({ children }: { children: React.ReactNode }) {
         if (savedDashboard) {
             setDashboardSeason(savedDashboard);
         } else {
-            setDashboardSeason('autumn');
+            setDashboardSeason('none');
         }
         setMounted(true);
     }, []);

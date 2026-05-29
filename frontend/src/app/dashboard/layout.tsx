@@ -10,10 +10,10 @@ function DashboardSeasonInit() {
     const { season, setSeason } = useSeason();
 
     useEffect(() => {
-        // Force autumn as default on dashboard if no user preference was set
+        // Force none as default on dashboard if no user preference was set
         const saved = localStorage.getItem('dashboard_season_v3');
-        if (!saved || saved === 'none') {
-            setSeason('autumn');
+        if (!saved) {
+            setSeason('none');
         }
     }, [setSeason]);
 
