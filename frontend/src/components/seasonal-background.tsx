@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { CloudRain, Snowflake, Sun, Leaf, Wind, Moon, Zap, EyeOff } from "lucide-react";
 import { useSeason, Season } from "@/contexts/SeasonContext"; // Note: This uses the Context we just created
 import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
 
 // --- Particle Config ---
 const PARTICLE_COUNT = 15; // Keep it low for performance
@@ -479,6 +480,12 @@ export function SeasonSwitcher() {
 export function FloatingAmbientSwitcher() {
     const { season, setSeason } = useSeason();
     const [isOpen, setIsOpen] = useState(false);
+    const pathname = usePathname();
+
+    const isDashboard = (pathname ? pathname.startsWith("/dashboard") : false) ||
+                        (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard"));
+
+    if (isDashboard) return null;
 
     const seasons: { id: Season; label: string; icon: React.ReactNode; desc: string; color: string }[] = [
         { id: 'none', label: 'Clear Sky', icon: <EyeOff className="w-4 h-4" />, desc: "Default dark template", color: "text-white/40" },

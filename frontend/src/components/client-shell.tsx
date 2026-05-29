@@ -10,11 +10,11 @@ export function ClientShell({ children }: { children: React.ReactNode }) {
   const [contentVisible, setContentVisible] = useState(false);
   const pathname = usePathname();
 
-  const isDashboard = (pathname ? pathname.startsWith("/dashboard") : false) ||
-                      (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard"));
+  const isLanding = (pathname === "/") ||
+                    (typeof window !== "undefined" && window.location.pathname === "/");
 
-  // Bypass cinematic intro completely when browsing the workspace dashboard
-  if (isDashboard) {
+  // Only show the cinematic intro on the main landing page (home route)
+  if (!isLanding) {
     return (
       <div className="w-full min-h-screen flex flex-col">
         {children}
