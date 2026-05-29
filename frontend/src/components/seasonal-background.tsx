@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
-import { CloudRain, Snowflake, Sun, Leaf, Wind } from "lucide-react";
+import { CloudRain, Snowflake, Sun, Leaf, Wind, Moon, Zap, EyeOff } from "lucide-react";
 import { useSeason, Season } from "@/contexts/SeasonContext"; // Note: This uses the Context we just created
 import { cn } from "@/lib/utils";
 
@@ -229,6 +229,96 @@ const RainyParticles = () => {
     );
 };
 
+const StormParticles = () => {
+    const prefersReducedMotion = useReducedMotion();
+    const isMobile = useIsMobile();
+    const count = isMobile ? 25 : 55;
+
+    // Generate random values for diagonal heavy wind-blown rain
+    const drops = Array.from({ length: count }).map((_, i) => ({
+        id: i,
+        x: Math.random() * 130 - 15, // wider to compensate for diagonal tilt
+        delay: Math.random() * 1.5,
+        duration: 0.55 + Math.random() * 0.35, // torrential speed
+        length: 22 + Math.random() * 18,
+    }));
+
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            {/* Dark Stormy Atmosphere overlay */}
+            <div className="absolute inset-0 bg-[#070707]/40 mix-blend-multiply" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#111116]/20 via-transparent to-transparent" />
+
+            {/* Lightning Flashes (Double-strike pattern repeating at random times) */}
+            {!prefersReducedMotion && (
+                <motion.div
+                    className="absolute inset-0 bg-white/70 pointer-events-none z-10"
+                    animate={{
+                        opacity: [0, 0, 0, 0.85, 0, 0, 0.7, 0, 0, 0, 0],
+                    }}
+                    transition={{
+                        duration: 5.5,
+                        repeat: Infinity,
+                        ease: "linear",
+                        times: [0, 0.35, 0.37, 0.39, 0.41, 0.43, 0.45, 0.47, 0.5, 0.8, 1],
+                    }}
+                />
+            )}
+
+            {/* Heavy Wind-Blown Torrential Rain (at 18deg tilt) */}
+            {drops.map((drop) => (
+                <motion.div
+                    key={drop.id}
+                    className="absolute bg-blue-300/20 dark:bg-slate-400/20 w-[1.2px] will-change-transform"
+                    style={{
+                        left: `${drop.x}%`,
+                        top: -30,
+                        height: drop.length,
+                        transform: "rotate(18deg)",
+                    }}
+                    animate={
+                        !prefersReducedMotion ? {
+                            y: ["0vh", "110vh"],
+                            x: ["0px", `${110 * Math.tan(18 * Math.PI / 180)}vh`],
+                            opacity: [0, 0.55, 0],
+                        } : { opacity: 0.1, y: "50vh" }
+                    }
+                    transition={{
+                        duration: drop.duration,
+                        repeat: Infinity,
+                        ease: "linear",
+                        delay: drop.delay,
+                    }}
+                />
+            ))}
+
+            {/* Blowing Wind Wisps */}
+            {!prefersReducedMotion && Array.from({ length: 4 }).map((_, i) => (
+                <motion.div
+                    key={`wisp-${i}`}
+                    className="absolute text-white/5 pointer-events-none"
+                    style={{
+                        top: `${20 + i * 20}%`,
+                        left: "-25%",
+                    }}
+                    animate={{
+                        x: ["0vw", "130vw"],
+                        opacity: [0, 0.12, 0],
+                    }}
+                    transition={{
+                        duration: 2.5 + Math.random() * 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: i * 1.2,
+                    }}
+                >
+                    <Wind size={70 + i * 15} strokeWidth={0.4} />
+                </motion.div>
+            ))}
+        </div>
+    );
+};
+
 // --- Main Background Component ---
 
 export function SeasonalBackground() {
@@ -243,7 +333,7 @@ export function SeasonalBackground() {
     if (!mounted || season === 'none') return null;
 
     return (
-        <div className="fixed inset-0 pointer-events-none z-[5] transition-colors duration-1000">
+        <div className="fixed inset-0 pointer-events-none z-[30] transition-colors duration-1000">
             <AnimatePresence mode="wait">
                 {season === 'autumn' && (
                     <motion.div
@@ -296,6 +386,19 @@ export function SeasonalBackground() {
                         <RainyParticles />
                     </motion.div>
                 )}
+
+                {season === 'storm' && (
+                    <motion.div
+                        key="storm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 1 }}
+                        className="absolute inset-0"
+                    >
+                        <StormParticles />
+                    </motion.div>
+                )}
             </AnimatePresence>
         </div>
     );
@@ -308,11 +411,12 @@ export function SeasonSwitcher() {
     const [isOpen, setIsOpen] = useState(false);
 
     const seasons: { id: Season; label: string; icon: React.ReactNode; color: string }[] = [
-        { id: 'none', label: 'None', icon: <div className="w-4 h-4 rounded-full border border-current" />, color: "text-gray-500" },
+        { id: 'none', label: 'None', icon: <EyeOff className="w-4 h-4" />, color: "text-gray-500" },
         { id: 'autumn', label: 'Autumn', icon: <Leaf className="w-4 h-4" />, color: "text-orange-500" },
         { id: 'winter', label: 'Winter', icon: <Snowflake className="w-4 h-4" />, color: "text-blue-400" },
         { id: 'summer', label: 'Summer', icon: <Sun className="w-4 h-4" />, color: "text-amber-500" },
         { id: 'rainy', label: 'Rainy', icon: <CloudRain className="w-4 h-4" />, color: "text-indigo-400" },
+        { id: 'storm', label: 'Thunderstorm', icon: <Zap className="w-4 h-4" />, color: "text-slate-400" },
     ];
 
     return (
@@ -363,6 +467,98 @@ export function SeasonSwitcher() {
                                     )}
                                 </button>
                             ))}
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+// ── Floating Ambient Switcher (Floating Crescent Moon Widget) ────────────────
+export function FloatingAmbientSwitcher() {
+    const { season, setSeason } = useSeason();
+    const [isOpen, setIsOpen] = useState(false);
+
+    const seasons: { id: Season; label: string; icon: React.ReactNode; desc: string; color: string }[] = [
+        { id: 'none', label: 'Clear Sky', icon: <EyeOff className="w-4 h-4" />, desc: "Default dark template", color: "text-white/40" },
+        { id: 'autumn', label: 'Autumn Leaves', icon: <Leaf className="w-4 h-4" />, desc: "Drifting orange leaves", color: "text-orange-500" },
+        { id: 'winter', label: 'Snowy Winter', icon: <Snowflake className="w-4 h-4" />, desc: "Gentle aesthetic snowfall", color: "text-blue-400" },
+        { id: 'summer', label: 'Golden Summer', icon: <Sun className="w-4 h-4" />, desc: "Warm glow & fireflies", color: "text-amber-500" },
+        { id: 'rainy', label: 'Steady Rain', icon: <CloudRain className="w-4 h-4" />, desc: "Calm streaming rain drops", color: "text-sky-400" },
+        { id: 'storm', label: 'Thunderstorm', icon: <Zap className="w-4 h-4" />, desc: "Sideways rain & lightning!", color: "text-yellow-500" },
+    ];
+
+    return (
+        <div className="fixed bottom-6 right-6 z-[999]">
+            {/* The Floating crescent moon logo button */}
+            <motion.button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-12 h-12 rounded-full flex items-center justify-center bg-[#070707]/80 hover:bg-[#0c0c0c] border border-white/10 hover:border-[#C8A97E]/50 text-[#C8A97E] backdrop-blur-md transition-all duration-300 shadow-[0_0_20px_rgba(0,0,0,0.6)] cursor-pointer focus:outline-none"
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.95 }}
+                title="Choose Ambient Backdrop"
+            >
+                <Moon className={cn("w-5 h-5 transition-transform duration-500", isOpen && "rotate-45")} strokeWidth={1.5} fill="rgba(200,169,126,0.12)" />
+                {season !== 'none' && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#C8A97E] animate-pulse" />
+                )}
+            </motion.button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        {/* Overlay to close when clicking outside */}
+                        <div
+                            className="fixed inset-0 z-40 bg-transparent cursor-default pointer-events-auto"
+                            onClick={() => setIsOpen(false)}
+                        />
+                        {/* Popup Panel positioned above the moon button */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            className="absolute bottom-16 right-0 w-64 rounded-2xl border border-white/5 bg-[#0a0a0a]/95 backdrop-blur-lg shadow-[0_0_40px_rgba(0,0,0,0.8)] z-50 overflow-hidden py-3 p-1 pointer-events-auto"
+                        >
+                            <div className="px-4 py-2 border-b border-white/5 mb-2">
+                                <p className="text-[10px] font-bold text-[#C8A97E] uppercase tracking-[0.2em] mb-0.5">
+                                    Ambient Mode
+                                </p>
+                                <p className="text-[9px] text-white/40 tracking-wider">
+                                    Customise page animations
+                                </p>
+                            </div>
+                            
+                            <div className="space-y-1">
+                                {seasons.map((s) => (
+                                    <button
+                                        key={s.id}
+                                        onClick={() => {
+                                            setSeason(s.id);
+                                            setIsOpen(false);
+                                        }}
+                                        className={cn(
+                                            "w-full px-4 py-2.5 text-left rounded-xl flex items-center gap-3.5 transition-all duration-300 hover:bg-white/5",
+                                            season === s.id ? "bg-white/5 text-white font-medium" : "text-white/50"
+                                        )}
+                                    >
+                                        <span className={cn("p-1.5 rounded-lg bg-white/5 transition-all", s.color)}>
+                                            {s.icon}
+                                        </span>
+                                        <div className="flex flex-col">
+                                            <span className="text-xs tracking-wider">{s.label}</span>
+                                            <span className="text-[9px] text-white/30 tracking-wide font-light">{s.desc}</span>
+                                        </div>
+                                        {season === s.id && (
+                                            <motion.div 
+                                                layoutId="floating-active-bullet" 
+                                                className="ml-auto w-1.5 h-1.5 rounded-full bg-[#C8A97E]" 
+                                            />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
                         </motion.div>
                     </>
                 )}

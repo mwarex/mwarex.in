@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type Season = 'none' | 'autumn' | 'winter' | 'summer' | 'rainy';
+export type Season = 'none' | 'autumn' | 'winter' | 'summer' | 'rainy' | 'storm';
 
 interface SeasonContextType {
     season: Season;
