@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     title: "MWareX | Streamline Your Video Workflow",
     description: "The ultimate platform for YouTubers and editors. Founded by Samay Samrat.",
     images: ["https://mwarex.in/images/samay-samrat.jpg"],
-    creator: "@ChemistGamer1",
+    creator: "@mwarex",
   },
   icons: {
     icon: [

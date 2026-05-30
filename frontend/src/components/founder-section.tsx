@@ -93,7 +93,7 @@ export function FounderSection() {
                         >
                             {[
                                 { icon: Youtube, href: 'https://www.youtube.com/@futxsamay', label: 'YouTube' },
-                                { icon: Twitter, href: 'https://x.com/ChemistGamer1', label: 'Twitter' },
+                                { icon: Twitter, href: 'https://x.com/mwarex', label: 'Twitter' },
                                 { icon: Github, href: 'https://github.com/samay-hash', label: 'GitHub' },
                                 { icon: Mail, href: 'mailto:founder.samay@gmail.com', label: 'Email' },
                             ].map((social) => (

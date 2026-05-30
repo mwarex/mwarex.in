@@ -235,7 +235,7 @@ export default function LandingPage() {
                 </p>
                 <div className="flex gap-4">
                   <SocialLink icon={<Github className="w-4 h-4" />} href="https://github.com/samay-hash" />
-                  <SocialLink icon={<Twitter className="w-4 h-4" />} href="https://x.com/ChemistGamer1" />
+                  <SocialLink icon={<Twitter className="w-4 h-4" />} href="https://x.com/mwarex" />
                   <SocialLink icon={<Youtube className="w-4 h-4" />} href="https://www.youtube.com/@futxsamay" />
                 </div>
               </div>

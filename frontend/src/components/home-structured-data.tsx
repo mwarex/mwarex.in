@@ -17,7 +17,7 @@ export function HomeStructuredData() {
                 "jobTitle": "Founder & CEO",
                 "sameAs": [
                     "https://www.youtube.com/@futxsamay",
-                    "https://twitter.com/ChemistGamer1",
+                    "https://x.com/mwarex",
                     "https://github.com/samay-hash",
                     "https://www.instagram.com/chemist.gamer"
                 ]

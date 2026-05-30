@@ -70,7 +70,7 @@ export default function FounderPage() {
         url: "https://mwarex.in/founder",
         sameAs: [
             "https://www.youtube.com/@futxsamay",
-            "https://twitter.com/ChemistGamer1",
+            "https://x.com/mwarex",
             "https://github.com/samay-hash",
             "https://www.instagram.com/chemist.gamer"
         ],
