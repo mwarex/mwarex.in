@@ -19,6 +19,7 @@ import {
   Video as VideoIcon,
   Menu,
   ChevronRight,
+  ChevronLeft,
   Loader2,
   LayoutDashboard,
   X,
@@ -38,7 +39,9 @@ import {
   Instagram,
   Linkedin,
   Twitter,
-  Link2
+  Link2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import VideoCard from "@/components/VideoCard";
 import { videoAPI, inviteAPI, getGoogleAuthUrl, paymentAPI, userAPI, roomAPI } from "@/lib/api";
@@ -146,6 +149,22 @@ export default function CreatorDashboard() {
     isOpen: false,
     videoId: null,
   });
+
+  // Sidebar collapse state (persisted)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebarCollapsed") === "true";
+    }
+    return false;
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed(v => {
+      const next = !v;
+      localStorage.setItem("sidebarCollapsed", String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     const data = getUserData();
@@ -799,19 +818,33 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <motion.aside
-        initial={{ x: -280 }}
-        animate={{ x: isSidebarOpen || typeof window !== 'undefined' && window.innerWidth >= 1024 ? 0 : -280 }}
+        animate={{ width: isSidebarCollapsed ? 64 : 256 }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
         className={cn(
-          "fixed lg:relative inset-y-0 left-0 z-50 w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ease-out lg:translate-x-0",
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed lg:relative inset-y-0 left-0 z-50 bg-card border-r border-border flex flex-col transition-transform duration-300 ease-out overflow-hidden",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full",
+          "lg:translate-x-0"
         )}
       >
-        {/* Logo Area */}
-        <div className="p-5 border-b border-border">
-          <MWareXLogo showText={true} size="md" />
+        {/* Logo + Collapse Toggle */}
+        <div className={cn("p-4 border-b border-border flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between")}>
+          {!isSidebarCollapsed && <MWareXLogo showText={true} size="md" />}
+          {isSidebarCollapsed && (
+            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center text-white font-bold text-xs">
+              M
+            </div>
+          )}
+          <button
+            onClick={toggleSidebarCollapse}
+            className="hidden lg:flex w-7 h-7 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
+            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          </button>
         </div>
 
         {/* Workspace Switcher */}
+        {!isSidebarCollapsed && (
         <div className="px-3 pt-3 pb-1">
           <div className="relative group">
             <button className="w-full flex items-center justify-between p-2 rounded-lg bg-secondary/50 hover:bg-secondary border border-transparent hover:border-border transition-all">
@@ -853,17 +886,19 @@ export default function CreatorDashboard() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          <p className="text-[10px] font-semibold text-muted-foreground px-3 mb-3 uppercase tracking-widest">Menu</p>
+          {!isSidebarCollapsed && <p className="text-[10px] font-semibold text-muted-foreground px-3 mb-3 uppercase tracking-widest">Menu</p>}
 
           <button 
             onClick={() => setActiveView("dashboard")}
             className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", activeView === "dashboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+            title="Dashboard"
           >
-           <LayoutDashboard className="w-4 h-4" />
-           <span>Dashboard</span>
+           <LayoutDashboard className="w-4 h-4 shrink-0" />
+           {!isSidebarCollapsed && <span>Dashboard</span>}
           </button>
           
           <button
@@ -872,33 +907,37 @@ export default function CreatorDashboard() {
               setIsSettingsOpen(true);
             }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
+            title="AI Brain Settings"
           >
-            <Bot className="w-4 h-4" />
-            <span>AI Brain Settings</span>
+            <Bot className="w-4 h-4 shrink-0" />
+            {!isSidebarCollapsed && <span>AI Brain Settings</span>}
           </button>
 
           <button
             onClick={() => { setIsIntegrationsOpen(true); setIsSidebarOpen(false); }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
+            title="Integrations"
           >
-            <Link2 className="w-4 h-4" />
-            <span>Integrations</span>
+            <Link2 className="w-4 h-4 shrink-0" />
+            {!isSidebarCollapsed && <span>Integrations</span>}
           </button>
 
           <button
             onClick={() => { setActiveView("pipeline"); setIsSidebarOpen(false); }}
             className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors", activeView === "pipeline" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+            title="AI Pipeline"
           >
-            <Cpu className="w-4 h-4" />
-            <span>AI Pipeline</span>
+            <Cpu className="w-4 h-4 shrink-0" />
+            {!isSidebarCollapsed && <span>AI Pipeline</span>}
           </button>
 
           <button
             onClick={() => { setActiveView("future"); setIsSidebarOpen(false); }}
             className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors", activeView === "future" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+            title="Future Features"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Future Features</span>
+            <Sparkles className="w-4 h-4 shrink-0" />
+            {!isSidebarCollapsed && <span>Future Features</span>}
           </button>
 
           <div className="my-4 border-t border-border" />
@@ -909,9 +948,10 @@ export default function CreatorDashboard() {
               setIsSettingsOpen(true);
             }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
+            title="Settings"
           >
-            <Settings className="w-4 h-4" />
-            <span>Settings</span>
+            <Settings className="w-4 h-4 shrink-0" />
+            {!isSidebarCollapsed && <span>Settings</span>}
           </button>
         </nav>
 
@@ -938,19 +978,29 @@ export default function CreatorDashboard() {
         />
 
         {/* User Profile */}
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-bold text-sm">
+        <div className={cn("p-4 border-t border-border", isSidebarCollapsed ? "flex justify-center" : "")}>
+          {isSidebarCollapsed ? (
+            <button
+              onClick={handleLogout}
+              className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-bold text-sm hover:opacity-90 transition-opacity"
+              title={`Logout (${userData?.name})`}
+            >
               {avatarLetter}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{userData?.name || "Creator"}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{userData?.email}</p>
-            </div>
-            <button onClick={handleLogout} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors" title="Logout">
-              <LogOut className="w-4 h-4" />
             </button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-bold text-sm">
+                {avatarLetter}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{userData?.name || "Creator"}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{userData?.email}</p>
+              </div>
+              <button onClick={handleLogout} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors" title="Logout">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </motion.aside>
 
