@@ -7,7 +7,6 @@ import {
   CheckCircle,
   XCircle,
   Youtube,
-  MoreVertical,
   X,
   ExternalLink,
   AlertTriangle,
@@ -20,12 +19,17 @@ import {
   Upload,
   ArrowRight,
   Trash2,
-  Bot
+  Bot,
+  UserCheck,
+  Calendar,
+  FileText,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { s3API } from "@/lib/api";
+import VideoCommentThread from "@/components/VideoCommentThread";
+import VideoActivityTimeline from "@/components/VideoActivityTimeline";
 
 interface VideoCardProps {
   video: {
@@ -57,6 +61,12 @@ interface VideoCardProps {
   onDeleteForEveryone?: (id: string) => void;
   aiProgress?: { percent: number; message: string; };
   showTimeline?: boolean;
+  // Collaboration extras
+  taskBrief?: string;
+  deadline?: string;
+  onAssign?: (id: string) => void;
+  showComments?: boolean;
+  showActivityTimeline?: boolean;
 }
 
 export default function VideoCard({
@@ -72,8 +82,35 @@ export default function VideoCard({
   onDeleteForMe,
   onDeleteForEveryone,
   aiProgress,
-  showTimeline = false
+  showTimeline = false,
+  taskBrief,
+  deadline,
+  onAssign,
+  showComments = false,
+  showActivityTimeline = false,
 }: VideoCardProps) {
+  const [briefExpanded, setBriefExpanded] = useState(false);
+
+  const deadlineDate = deadline ? new Date(deadline) : null;
+  const daysUntilDeadline = deadlineDate
+    ? Math.round((deadlineDate.getTime() - Date.now()) / 86400000)
+    : null;
+  const deadlineColor =
+    daysUntilDeadline === null
+      ? ""
+      : daysUntilDeadline < 0
+      ? "text-red-400 border-red-400/30 bg-red-400/8"
+      : daysUntilDeadline === 0
+      ? "text-amber-400 border-amber-400/30 bg-amber-400/8"
+      : "text-emerald-400 border-emerald-400/30 bg-emerald-400/8";
+  const deadlineLabel =
+    daysUntilDeadline === null
+      ? ""
+      : daysUntilDeadline < 0
+      ? `${Math.abs(daysUntilDeadline)}d overdue`
+      : daysUntilDeadline === 0
+      ? "Due today!"
+      : `Due in ${daysUntilDeadline}d`;
   const router = useRouter();
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [videoError, setVideoError] = useState(false);
@@ -383,9 +420,33 @@ export default function VideoCard({
           </div>
         )}
 
+        {/* Task Brief Banner */}
+        {taskBrief && (
+          <div className="mb-3">
+            <button
+              onClick={(e) => { e.stopPropagation(); setBriefExpanded(!briefExpanded); }}
+              className="w-full flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-[#C8A97E]/8 border border-[#C8A97E]/20 text-[#C8A97E]/80 hover:text-[#C8A97E] transition-colors"
+            >
+              <FileText className="w-3 h-3 shrink-0" />
+              <span className={cn("flex-1 text-left", briefExpanded ? "" : "truncate")}>
+                {briefExpanded ? taskBrief : taskBrief}
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* Deadline Badge */}
+        {deadlineDate && daysUntilDeadline !== null && (
+          <div className={cn("mb-3 inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium", deadlineColor)}>
+            <Calendar className="w-3 h-3" />
+            <span>{deadlineLabel}</span>
+            <span className="opacity-60">· {deadlineDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+          </div>
+        )}
+
         {/* Assigned Editor Badge */}
         {video.editorId && typeof video.editorId === 'object' && showActions && (
-          <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 px-2 py-1.5 rounded-lg w-fit">
+          <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 px-2 py-1.5 rounded-lg w-fit">
             <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary uppercase">
               {(video.editorId as any).name?.[0] || 'E'}
             </div>
@@ -541,8 +602,30 @@ export default function VideoCard({
             </div>
           )}
         </div>
+
+        {/* Assign to Editor Button (Creator view on raw_uploaded) */}
+        {onAssign && video.status === "raw_uploaded" && (
+          <div className="px-5 pb-4">
+            <button
+              onClick={(e) => { e.stopPropagation(); onAssign(video._id); }}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-[#C8A97E]/10 hover:bg-[#C8A97E]/20 text-[#C8A97E] border border-[#C8A97E]/25 text-xs font-semibold transition-all"
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              {video.editorId ? "Reassign Editor" : "Assign to Editor"}
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Comment Thread */}
+      {showComments && (
+        <VideoCommentThread videoId={video._id} videoTitle={video.title} />
+      )}
+
+      {/* Activity Timeline */}
+      {showActivityTimeline && (
+        <VideoActivityTimeline video={video} />
+      )}
 
       {/* Video Modal */}
       <AnimatePresence>

@@ -56,6 +56,8 @@ import CreatorProjectsView from "@/components/CreatorProjectsView";
 import FutureFeatures from "@/components/FutureFeatures";
 import AIPipeline from "@/components/AIPipeline";
 import { runFakeGeminiProxy } from "@/lib/fakeGeminiProxy";
+import AssignEditorModal from "@/components/AssignEditorModal";
+import EditorRosterPanel from "@/components/EditorRosterPanel";
 
 interface Video {
   _id: string;
@@ -138,6 +140,12 @@ export default function CreatorDashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'general' | 'aiConfig' | 'models' | 'integrations'>('general');
   const [isIntegrationsOpen, setIsIntegrationsOpen] = useState(false);
+
+  // Assign Editor Modal
+  const [assignModal, setAssignModal] = useState<{ isOpen: boolean; videoId: string | null }>({
+    isOpen: false,
+    videoId: null,
+  });
 
   useEffect(() => {
     const data = getUserData();
@@ -372,6 +380,26 @@ export default function CreatorDashboard() {
       setEditors(editors.filter(e => e._id !== id));
     } catch (err) {
       console.error("Failed to remove editor", err);
+    }
+  };
+
+  const handleAssignEditor = async (editorId: string, brief: string, deadline: string) => {
+    if (!assignModal.videoId) return;
+    try {
+      // Update local state immediately so the card reflects the assignment
+      const assignedEditor = editors.find(e => e._id === editorId);
+      if (assignedEditor) {
+        setVideos(prev => prev.map(v =>
+          v._id === assignModal.videoId
+            ? { ...v, editorId: { _id: assignedEditor._id, name: assignedEditor.name, email: assignedEditor.email } }
+            : v
+        ));
+      }
+      toast.success(`Assigned to ${assignedEditor?.name || 'editor'}!`);
+      setAssignModal({ isOpen: false, videoId: null });
+    } catch (err) {
+      console.error("Failed to assign editor", err);
+      toast.error("Failed to assign editor");
     }
   };
 
@@ -887,6 +915,28 @@ export default function CreatorDashboard() {
           </button>
         </nav>
 
+        {/* Team / Editor Roster Panel */}
+        <EditorRosterPanel
+          editors={editors}
+          currentRoom={currentRoom}
+          onRemoveEditor={handleRemoveEditor}
+          onInviteSent={(email, link) => {
+            setInviteLink(link);
+            setInviteEmail(email);
+          }}
+          sendInvite={async (email, link) => {
+            await inviteAPI.sendInvite(email, link);
+          }}
+          workspaceName={currentRoom?.name}
+          videosByEditorId={videos.reduce((acc, v) => {
+            if (v.editorId && typeof v.editorId === 'object') {
+              const eid = (v.editorId as any)._id;
+              acc[eid] = (acc[eid] || 0) + (v.status === 'editing_in_progress' || v.status === 'raw_uploaded' ? 1 : 0);
+            }
+            return acc;
+          }, {} as Record<string, number>)}
+        />
+
         {/* User Profile */}
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
@@ -1324,6 +1374,9 @@ export default function CreatorDashboard() {
                   }
                   aiProgress={aiProgressMap[video._id]}
                   showTimeline={true}
+                  onAssign={video.status === "raw_uploaded" ? (id) => setAssignModal({ isOpen: true, videoId: id }) : undefined}
+                  showComments={true}
+                  showActivityTimeline={true}
                 />
               ))}
             </motion.div>
@@ -1825,6 +1878,19 @@ export default function CreatorDashboard() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Assign Editor Modal */}
+      <AssignEditorModal
+        isOpen={assignModal.isOpen}
+        onClose={() => setAssignModal({ isOpen: false, videoId: null })}
+        onAssign={handleAssignEditor}
+        editors={editors}
+        videoTitle={
+          assignModal.videoId
+            ? (videos.find(v => v._id === assignModal.videoId)?.title || "Untitled Video")
+            : ""
+        }
+      />
     </div>
   );
 }
