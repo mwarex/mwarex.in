@@ -245,7 +245,7 @@ class VideoController extends BaseController {
 
     async aiCallback(req, res) {
         try {
-            const { status, editedFileUrl, message } = req.body;
+            const { status, editedFileUrl, portraitFileUrl, captionFileUrl, transcript, clips, message } = req.body;
             // Get raw context access from mongoose Model
             const VideoModel = require("../models/video");
             const video = await VideoModel.findById(req.params.id);
@@ -260,12 +260,100 @@ class VideoController extends BaseController {
                 if (editedFileUrl) {
                     video.fileUrl = editedFileUrl;
                 }
+                if (portraitFileUrl) {
+                    video.portraitFileUrl = portraitFileUrl;
+                }
+                if (captionFileUrl) {
+                    video.captionFileUrl = captionFileUrl;
+                }
+                if (transcript) {
+                    video.transcript = transcript;
+                }
+                if (clips && clips.length > 0) {
+                    video.clips = clips;
+                }
             }
             
             await video.save();
             this.emitVideoUpdate(req, video, "video_updated");
             
             return this.success(res, { message: "AI processing successfully applied to video." });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    async clipsCallback(req, res) {
+        try {
+            const { status, clips, transcript, message } = req.body;
+            const VideoModel = require("../models/video");
+            
+            // Note: req.params.id might be the parent video ID, or a dummy if it was a direct YouTube URL
+            // If parent video exists, we update its progress
+            let parentVideo = null;
+            if (req.params.id && req.params.id !== 'undefined' && req.params.id !== 'null') {
+                parentVideo = await VideoModel.findById(req.params.id);
+            }
+            
+            if (status === "failed") {
+                if (parentVideo) {
+                    parentVideo.status = "raw_rejected";
+                    parentVideo.rejectionReason = "Clip Extraction Failed: " + message;
+                    await parentVideo.save();
+                    this.emitVideoUpdate(req, parentVideo, "video_updated");
+                }
+                return this.success(res, { message: "Handled failure." });
+            }
+            
+            // Create new video entries for each clip
+            if (clips && clips.length > 0) {
+                const creatorId = parentVideo ? parentVideo.creatorId : req.body.creatorId;
+                const roomId = parentVideo ? parentVideo.roomId : req.body.roomId;
+                
+                const clipDocs = [];
+                for (const clip of clips) {
+                    const newClip = new VideoModel({
+                        title: clip.title || "Extracted Clip",
+                        fileUrl: clip.fileUrl,
+                        portraitFileUrl: clip.portraitFileUrl || "",
+                        status: "pending",
+                        creatorId,
+                        roomId,
+                        isClip: true,
+                        parentVideoId: parentVideo ? parentVideo._id : null,
+                        viralScore: clip.viralScore || 0,
+                        aspectRatio: clip.aspectRatio || "16:9"
+                    });
+                    await newClip.save();
+                    clipDocs.push(newClip);
+                    this.emitVideoUpdate({ io: req.io, body: { roomId } }, newClip, "video_uploaded");
+                }
+                
+                if (parentVideo) {
+                    parentVideo.status = "approved";
+                    parentVideo.aiProgress = { percent: 100, message: "Clips extracted successfully." };
+                    if (transcript) {
+                        parentVideo.transcript = transcript;
+                    }
+                    // Store structured clip info on the parent
+                    parentVideo.clips = clips.map((c, i) => ({
+                        id: `clip-${i + 1}`,
+                        title: c.title || `Clip ${i + 1}`,
+                        score: `${c.viralScore || 70}/100`,
+                        duration: c.duration || "00:00",
+                        hashtags: c.hashtags || "#MWareX",
+                        startTime: c.startTime || "00:00",
+                        endTime: c.endTime || "00:00",
+                        fileUrl: c.fileUrl || "",
+                        portraitFileUrl: c.portraitFileUrl || "",
+                        aspectRatio: c.aspectRatio || "16:9"
+                    }));
+                    await parentVideo.save();
+                    this.emitVideoUpdate(req, parentVideo, "video_updated");
+                }
+            }
+            
+            return this.success(res, { message: "Clips registered successfully." });
         } catch (err) {
             return this.handleError(res, err);
         }
@@ -435,6 +523,57 @@ class VideoController extends BaseController {
         try {
             const result = await this.videoService.deleteForMe(req.params.id, req.userId);
             return this.success(res, result);
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    // ── CLIP EXTRACTOR ──
+    async extractClips(req, res) {
+        try {
+            const { youtubeUrl, videoId, roomId } = req.body;
+            let fileUrl = req.body.fileUrl;
+            
+            let targetVideoId = videoId;
+            if (!youtubeUrl && videoId) {
+                const VideoModel = require("../models/video");
+                const video = await VideoModel.findById(videoId);
+                if (video) fileUrl = video.rawFileUrl || video.fileUrl;
+            } else if (youtubeUrl && !videoId) {
+                // Create a placeholder video so the frontend can track progress
+                const VideoModel = require("../models/video");
+                const newParent = new VideoModel({
+                    title: "YouTube Import",
+                    description: youtubeUrl,
+                    status: "ai_processing",
+                    creatorId: req.userId,
+                    roomId,
+                    fileUrl: youtubeUrl
+                });
+                await newParent.save();
+                targetVideoId = newParent._id.toString();
+                // Tell frontend a new video was added
+                this.emitVideoUpdate({ io: req.io, body: { roomId } }, newParent, "video_uploaded");
+            }
+
+            const pythonUrl = process.env.PYTHON_API_URL || "http://localhost:5001";
+            
+            // Just trigger the python agent and return success immediately
+            if (global.fetch) {
+                global.fetch(`${pythonUrl}/extract_clips`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        youtubeUrl,
+                        videoId: targetVideoId,
+                        roomId,
+                        fileUrl,
+                        creatorId: req.userId
+                    })
+                }).catch(err => console.error("AI Engine clip extraction network err:", err.message));
+            }
+            
+            return this.success(res, { message: "Clip extraction started in background." });
         } catch (err) {
             return this.handleError(res, err);
         }

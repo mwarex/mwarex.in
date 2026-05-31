@@ -9,6 +9,7 @@ const userAuth = require("../middlewares/userMiddleware");
 // /register-s3 to create the video record. No size limit.
 // ─────────────────────────────────────────────────────────────
 router.post("/register-s3", userAuth, (req, res) => VideoController.registerFromS3(req, res));
+router.post("/extract-clips", userAuth, (req, res) => VideoController.extractClips(req, res));
 
 // ─────────────────────────────────────────────────────────────
 // Legacy Cloudinary upload (kept for backward compat / small files)
@@ -39,6 +40,7 @@ router.get("/youtube-status", userAuth, (req, res) => VideoController.youtubeSta
 router.post("/store-youtube-tokens", userAuth, (req, res) => VideoController.storeYoutubeTokens(req, res));
 router.post("/:id/approve", userAuth, (req, res) => VideoController.approve(req, res));
 router.post("/:id/ai-callback", (req, res) => VideoController.aiCallback(req, res));
+router.post("/:id/clips-callback", (req, res) => VideoController.clipsCallback(req, res));
 router.post("/:id/ai-progress", (req, res) => VideoController.aiProgress(req, res));
 router.post("/:id/reject", userAuth, (req, res) => VideoController.reject(req, res));
 router.post("/:id/raw-review", userAuth, (req, res) => VideoController.rawReview(req, res));

@@ -23,11 +23,7 @@ import {
   Lock,
   DollarSign,
   Wand2,
-  Briefcase,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Bot,
-  Menu,
+  Briefcase
 } from "lucide-react";
 import VideoCard from "@/components/VideoCard";
 import { videoAPI, aiAPI, paymentAPI, roomAPI } from "@/lib/api";
@@ -77,23 +73,6 @@ export default function EditorDashboard() {
   const [lockedRoomId, setLockedRoomId] = useState<string | null>(null);
   // S3 direct upload modal
   const [isS3UploadOpen, setIsS3UploadOpen] = useState(false);
-
-  // Sidebar collapse (editor)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("editorSidebarCollapsed") === "true";
-    }
-    return false;
-  });
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
-  const toggleSidebarCollapse = () => {
-    setIsSidebarCollapsed(v => {
-      const next = !v;
-      localStorage.setItem("editorSidebarCollapsed", String(next));
-      return next;
-    });
-  };
 
   // Form State
   const [title, setTitle] = useState("");
@@ -377,171 +356,9 @@ export default function EditorDashboard() {
   return (
     <div
       style={{ willChange: "transform", transform: "translateZ(0)" }}
-      className="min-h-screen text-foreground transition-colors duration-300 font-sans flex"
+      className="min-h-screen text-foreground transition-colors duration-300 font-sans"
     >
-      {/* Mobile sidebar overlay */}
-      <AnimatePresence>
-        {isMobileSidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMobileSidebarOpen(false)}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* ── Editor Sidebar ── */}
-      <motion.aside
-        animate={{ width: isSidebarCollapsed ? 64 : 240 }}
-        transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className={cn(
-          "fixed lg:relative inset-y-0 left-0 z-50 bg-card border-r border-border flex flex-col overflow-hidden shrink-0",
-          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full",
-          "lg:translate-x-0"
-        )}
-      >
-        {/* Logo + Collapse */}
-        <div className={cn("p-4 border-b border-border flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between")}>
-          {!isSidebarCollapsed && <MWareXLogo showText={true} size="md" />}
-          {isSidebarCollapsed && (
-            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center text-white font-bold text-xs">
-              M
-            </div>
-          )}
-          <button
-            onClick={toggleSidebarCollapse}
-            className="hidden lg:flex w-7 h-7 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
-            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-          </button>
-        </div>
-
-        {/* Workspace badge */}
-        {!isSidebarCollapsed && (
-          <div className="px-3 pt-3 pb-1">
-            {lockedRoomId ? (
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-secondary/50 border border-border/50">
-                <Lock className="w-3 h-3 text-muted-foreground shrink-0" />
-                <span className="font-medium text-xs text-muted-foreground truncate">{currentRoom?.name || "Workspace"}</span>
-              </div>
-            ) : (
-              <div className="relative group">
-                <button className="w-full flex items-center justify-between p-2 rounded-lg bg-secondary/50 hover:bg-secondary border border-transparent hover:border-border transition-all">
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="w-7 h-7 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
-                      {currentRoom?.name?.[0] || "W"}
-                    </div>
-                    <span className="font-medium text-xs truncate">{currentRoom?.name || "Select Workspace"}</span>
-                  </div>
-                </button>
-                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-xl overflow-hidden hidden group-focus-within:block group-hover:block z-50">
-                  <div className="max-h-40 overflow-y-auto p-1">
-                    {rooms.map(room => (
-                      <button
-                        key={room._id}
-                        onClick={() => setCurrentRoom(room)}
-                        className={cn("w-full flex items-center gap-2 p-2 rounded-md text-xs transition-colors text-left",
-                          currentRoom?._id === room._id ? "bg-primary/10 text-primary" : "hover:bg-secondary text-muted-foreground"
-                        )}
-                      >
-                        <span className="truncate">{room.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="p-1 border-t border-border">
-                    <button
-                      onClick={() => setIsRoomModalOpen(true)}
-                      className="w-full flex items-center gap-2 p-2 rounded-md text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Join Workspace
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Nav */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {!isSidebarCollapsed && <p className="text-[10px] font-semibold text-muted-foreground px-2 mb-3 uppercase tracking-widest">Menu</p>}
-
-          <button
-            onClick={() => setActiveView("dashboard")}
-            className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors",
-              activeView === "dashboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            )}
-            title="Dashboard"
-          >
-            <LayoutDashboard className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>Dashboard</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveView("marketplace")}
-            className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors",
-              activeView === "marketplace" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            )}
-            title="Marketplace"
-          >
-            <Briefcase className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>Marketplace</span>}
-          </button>
-
-          <button
-            onClick={() => router.push("/dashboard/editor/ai-studio")}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm"
-            title="AI Studio"
-          >
-            <Sparkles className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>AI Studio</span>}
-          </button>
-
-          <div className="my-3 border-t border-border" />
-
-          <button
-            onClick={() => router.push("/dashboard/editor/settings")}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm"
-            title="Settings"
-          >
-            <Settings className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>Settings</span>}
-          </button>
-        </nav>
-
-        {/* User profile */}
-        <div className={cn("p-4 border-t border-border", isSidebarCollapsed ? "flex justify-center" : "")}>
-          {isSidebarCollapsed ? (
-            <button
-              onClick={handleLogout}
-              className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center text-white font-bold text-sm hover:opacity-90 transition-opacity"
-              title={`Logout (${userData?.name})`}
-            >
-              {userData?.name?.[0]?.toUpperCase() || "E"}
-            </button>
-          ) : (
-            <div className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center text-white font-bold text-sm">
-                {userData?.name?.[0]?.toUpperCase() || "E"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{userData?.name || "Editor"}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{userData?.email}</p>
-              </div>
-              <button onClick={handleLogout} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors" title="Logout">
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </motion.aside>
-
-      {/* Main content column */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Header */}
       <header
         style={{ willChange: "transform", transform: "translateZ(0)" }}
         className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border"
@@ -839,8 +656,6 @@ export default function EditorDashboard() {
                       onRawAccept={handleRawAccept}
                       onRawReject={handleRawReject}
                       onDeleteForMe={handleDeleteForMe}
-                      showComments={true}
-                      showActivityTimeline={true}
                     />
                   ))}
                 </div>
@@ -862,8 +677,6 @@ export default function EditorDashboard() {
                       showEditorActions={true}
                       onUploadEdit={openUploadEditModal}
                       onDeleteForMe={handleDeleteForMe}
-                      showComments={true}
-                      showActivityTimeline={true}
                     />
                   ))}
                 </div>
@@ -885,8 +698,6 @@ export default function EditorDashboard() {
                       showEditorActions={video.status === "rejected"}
                       onUploadEdit={openUploadEditModal}
                       onDeleteForMe={handleDeleteForMe}
-                      showComments={true}
-                      showActivityTimeline={true}
                     />
                   ))}
                 </div>
@@ -1167,7 +978,6 @@ export default function EditorDashboard() {
         isRaw={false}
         title={uploadEditId ? "Submit Edited Version" : "New Submission"}
       />
-      </div>
     </div >
   );
 }

@@ -30,36 +30,24 @@ export default function DashboardLayout({
             {/* Init default winter season for dashboard */}
             <DashboardSeasonInit />
 
-            {/* Premium corner net/grid — 4 individual corners fading inward */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-                {/* Top-left */}
-                <div className="absolute top-0 left-0 w-[55%] h-[55%]" style={{
-                    backgroundImage: 'linear-gradient(rgba(200,169,126,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.07) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    maskImage: 'radial-gradient(ellipse at top left, black 0%, transparent 65%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse at top left, black 0%, transparent 65%)'
+            {/* Premium Background image matching the "Replacing the Fragmented Workflow" section */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <img 
+                    src="/bg-images/10037.jpg" 
+                    alt="Background" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-15 md:opacity-20"
+                    style={{
+                        maskImage: 'radial-gradient(ellipse at center, black 0%, transparent 80%)',
+                        WebkitMaskImage: 'radial-gradient(ellipse at center, black 0%, transparent 80%)'
+                    }}
+                />
+                <div className="absolute inset-0 bg-[#0d0d0d]/60 mix-blend-multiply" />
+                {/* Subtle grid pattern matching the main tech-aesthetic */}
+                <div className="absolute inset-0 opacity-[0.05]" style={{
+                    backgroundImage: 'linear-gradient(rgba(200,169,126,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.1) 1px, transparent 1px)',
+                    backgroundSize: '50px 50px',
                 }} />
-                {/* Top-right */}
-                <div className="absolute top-0 right-0 w-[55%] h-[55%]" style={{
-                    backgroundImage: 'linear-gradient(rgba(200,169,126,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.07) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    maskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 65%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 65%)'
-                }} />
-                {/* Bottom-left */}
-                <div className="absolute bottom-0 left-0 w-[55%] h-[55%]" style={{
-                    backgroundImage: 'linear-gradient(rgba(200,169,126,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.07) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    maskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 65%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 65%)'
-                }} />
-                {/* Bottom-right */}
-                <div className="absolute bottom-0 right-0 w-[55%] h-[55%]" style={{
-                    backgroundImage: 'linear-gradient(rgba(200,169,126,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.07) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    maskImage: 'radial-gradient(ellipse at bottom right, black 0%, transparent 65%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse at bottom right, black 0%, transparent 65%)'
-                }} />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0d0d0d] via-transparent to-[#0d0d0d]"></div>
             </div>
 
             {/* Seasonal Effects (snowfall etc) */}

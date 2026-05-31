@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Send, ChevronDown, Loader2 } from "lucide-react";
+import { MessageSquare, Send, ChevronDown, Loader2, X } from "lucide-react";
 import { videoAPI } from "@/lib/api";
 import { getUserData } from "@/lib/auth";
-import { getSocket } from "@/lib/socket";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -14,14 +13,13 @@ interface Comment {
   text: string;
   author: string;
   authorInitial: string;
-  isOwn: boolean;
-  isAI?: boolean;
+  role: "creator" | "editor" | "you";
   createdAt: string;
 }
 
 interface VideoCommentThreadProps {
   videoId: string;
-  videoTitle?: string;
+  videoTitle: string;
 }
 
 function timeAgo(dateStr: string): string {
@@ -32,21 +30,6 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-function mapRawComment(c: any, myId: string): Comment {
-  const authorId = c.author?._id || c.author;
-  const isAI = c.isAI === true;
-  const authorName = isAI ? "AI Editor" : (c.author?.name || c.author?.email || "Unknown");
-  return {
-    _id: c._id || String(Math.random()),
-    text: c.text,
-    author: authorName,
-    authorInitial: isAI ? "🤖" : (authorName[0]?.toUpperCase() || "?"),
-    isOwn: !isAI && String(authorId) === String(myId),
-    isAI,
-    createdAt: c.createdAt || new Date().toISOString(),
-  };
-}
-
 export default function VideoCommentThread({ videoId, videoTitle }: VideoCommentThreadProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -54,92 +37,71 @@ export default function VideoCommentThread({ videoId, videoTitle }: VideoComment
   const [newComment, setNewComment] = useState("");
   const [isSending, setIsSending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
-  const fetchedRef = useRef(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const userData = getUserData();
-  const myId = (userData as any)?.id || "";
-  const myName = (userData as any)?.name || (userData as any)?.email || "You";
+  const myName = userData?.name || userData?.email || "You";
   const myInitial = myName[0]?.toUpperCase() || "U";
 
-  const scrollToBottom = () => {
-    setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
-  };
-
-  const fetchComments = useCallback(async () => {
+  const fetchComments = async () => {
+    setIsLoading(true);
     try {
       const res = await videoAPI.getVideo(videoId);
-      const raw = res.data?.comments || [];
-      setComments(raw.map((c: any) => mapRawComment(c, myId)));
-    } catch {
-      // silently fail
+      const rawComments = res.data?.comments || [];
+      const mapped: Comment[] = rawComments.map((c: any) => ({
+        _id: c._id,
+        text: c.text,
+        author: c.author?.name || c.author?.email || "Unknown",
+        authorInitial: (c.author?.name || c.author?.email || "U")[0].toUpperCase(),
+        role: c.author?._id === userData?.id ? "you" : c.author?.role || "editor",
+        createdAt: c.createdAt || new Date().toISOString(),
+      }));
+      setComments(mapped);
+    } catch (err) {
+      console.error("Failed to fetch comments:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [videoId, myId]);
+  };
 
-  // ── Socket: join the video room and listen for new_comment ──
   useEffect(() => {
-    const socket = getSocket();
-    // Join the per-video socket channel
-    socket.emit("join_video", videoId);
-
-    const handleNewComment = (raw: any) => {
-      // raw can be either { comment } or the comment itself
-      const commentData = raw?.comment || raw;
-      const mapped = mapRawComment(commentData, myId);
-
-      setComments((prev) => {
-        // avoid duplicate optimistic entries
-        if (prev.some((c) => c._id === mapped._id)) return prev;
-        return [...prev, mapped];
-      });
-      scrollToBottom();
-    };
-
-    socket.on("new_comment", handleNewComment);
-
-    return () => {
-      socket.off("new_comment", handleNewComment);
-    };
-  }, [videoId, myId]);
-
-  // ── Fetch on first open ──
-  useEffect(() => {
-    if (isOpen && !fetchedRef.current) {
-      fetchedRef.current = true;
-      setIsLoading(true);
+    if (isOpen && comments.length === 0) {
       fetchComments();
     }
-    if (isOpen) scrollToBottom();
-  }, [isOpen, fetchComments]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  }, [comments, isOpen]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    const text = newComment.trim();
-    if (!text) return;
+    if (!newComment.trim()) return;
 
-    // Optimistic insert
-    const optimistic: Comment = {
-      _id: `opt-${Date.now()}`,
-      text,
+    const tempComment: Comment = {
+      _id: `temp-${Date.now()}`,
+      text: newComment.trim(),
       author: myName,
       authorInitial: myInitial,
-      isOwn: true,
+      role: "you",
       createdAt: new Date().toISOString(),
     };
-    setComments((prev) => [...prev, optimistic]);
+
+    setComments((prev) => [...prev, tempComment]);
+    const sentText = newComment.trim();
     setNewComment("");
     setIsSending(true);
-    scrollToBottom();
 
     try {
-      await videoAPI.addComment(videoId, text);
-      // Backend will emit new_comment via socket — refetch to get real IDs
-      await fetchComments();
-    } catch {
+      await videoAPI.addComment(videoId, sentText);
+      // refresh to get real IDs from backend
+      fetchComments();
+    } catch (err) {
       toast.error("Failed to send comment");
-      setComments((prev) => prev.filter((c) => c._id !== optimistic._id));
-      setNewComment(text);
+      setComments((prev) => prev.filter((c) => c._id !== tempComment._id));
+      setNewComment(sentText);
     } finally {
       setIsSending(false);
     }
@@ -152,92 +114,92 @@ export default function VideoCommentThread({ videoId, videoTitle }: VideoComment
     }
   };
 
-  const unreadCount = comments.length;
-
   return (
     <div className="border-t border-white/6">
-      {/* Toggle */}
+      {/* Toggle Header */}
       <button
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-medium text-white/40 hover:text-white/70 hover:bg-white/3 transition-all"
       >
         <span className="flex items-center gap-2">
           <MessageSquare className="w-3.5 h-3.5" />
-          <span>Comments</span>
-          {unreadCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">
-              {unreadCount}
-            </span>
-          )}
+          <span>
+            Comments
+            {comments.length > 0 && (
+              <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">
+                {comments.length}
+              </span>
+            )}
+          </span>
         </span>
         <ChevronDown
           className={cn("w-3.5 h-3.5 transition-transform duration-200", isOpen ? "rotate-180" : "")}
         />
       </button>
 
+      {/* Comment Panel */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 pt-2 space-y-3">
-              {/* Message list */}
-              <div className="max-h-48 overflow-y-auto space-y-2.5 pr-1 scroll-smooth">
+              {/* Messages */}
+              <div className="max-h-44 overflow-y-auto space-y-2.5 pr-1">
                 {isLoading ? (
-                  <div className="flex justify-center py-5">
+                  <div className="flex justify-center py-4">
                     <Loader2 className="w-4 h-4 animate-spin text-white/30" />
                   </div>
                 ) : comments.length === 0 ? (
-                  <div className="text-center py-5 text-white/25 text-xs italic">
-                    No messages yet. Start the conversation!
+                  <div className="text-center py-4 text-white/25 text-xs italic">
+                    No comments yet. Be the first to leave feedback!
                   </div>
                 ) : (
-                  comments.map((c) => (
+                  comments.map((comment) => (
                     <div
-                      key={c._id}
-                      className={cn("flex gap-2.5", c.isOwn ? "flex-row-reverse" : "")}
+                      key={comment._id}
+                      className={cn("flex gap-2.5", comment.role === "you" ? "flex-row-reverse" : "")}
                     >
                       {/* Avatar */}
                       <div
                         className={cn(
                           "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5",
-                          c.isAI
-                            ? "bg-violet-500/20 text-violet-300 text-xs"
-                            : c.isOwn
+                          comment.role === "you"
                             ? "bg-primary/20 text-primary"
-                            : "bg-[#C8A97E]/20 text-[#C8A97E]"
+                            : comment.role === "creator"
+                            ? "bg-[#C8A97E]/20 text-[#C8A97E]"
+                            : "bg-violet-500/20 text-violet-400"
                         )}
                       >
-                        {c.isAI ? "🤖" : c.authorInitial}
+                        {comment.authorInitial}
                       </div>
 
                       <div
                         className={cn(
-                          "max-w-[78%] flex flex-col",
-                          c.isOwn ? "items-end" : "items-start"
+                          "max-w-[78%]",
+                          comment.role === "you" ? "items-end" : "items-start",
+                          "flex flex-col"
                         )}
                       >
                         <div
                           className={cn(
                             "px-3 py-2 rounded-xl text-xs leading-relaxed",
-                            c.isAI
-                              ? "bg-violet-500/10 text-violet-200 border border-violet-500/20 rounded-tl-sm"
-                              : c.isOwn
-                              ? "bg-primary/15 text-white border border-primary/20 rounded-tr-sm"
-                              : "bg-white/6 text-white/80 border border-white/8 rounded-tl-sm"
+                            comment.role === "you"
+                              ? "bg-primary/15 text-white rounded-tr-sm border border-primary/20"
+                              : "bg-white/6 text-white/80 rounded-tl-sm border border-white/8"
                           )}
                         >
-                          {c.text}
+                          {comment.text}
                         </div>
                         <span className="text-[10px] text-white/25 mt-0.5 px-1">
-                          {!c.isOwn && (
-                            <span className="font-medium text-white/35">{c.author} · </span>
+                          {comment.role !== "you" && (
+                            <span className="font-medium text-white/35">{comment.author} · </span>
                           )}
-                          {timeAgo(c.createdAt)}
+                          {timeAgo(comment.createdAt)}
                         </span>
                       </div>
                     </div>
@@ -247,25 +209,45 @@ export default function VideoCommentThread({ videoId, videoTitle }: VideoComment
               </div>
 
               {/* Input */}
-              <form onSubmit={handleSend} className="flex gap-2 items-end">
-                <textarea
-                  rows={1}
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Message creator / editor… (Enter to send)"
-                  className="flex-1 resize-none bg-white/5 border border-white/10 focus:border-primary/40 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/25 outline-none transition-all max-h-20"
-                />
+              <form onSubmit={handleSend} className="flex flex-col gap-2">
+                <div className="flex gap-2 items-end">
+                  <textarea
+                    ref={inputRef}
+                    rows={1}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Leave feedback... (Enter to send)"
+                    className="flex-1 resize-none bg-white/5 border border-white/10 focus:border-primary/40 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/25 outline-none transition-all max-h-20"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newComment.trim() || isSending}
+                    className="w-8 h-8 rounded-xl bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary flex items-center justify-center shrink-0 disabled:opacity-30 transition-all active:scale-95"
+                  >
+                    {isSending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
                 <button
-                  type="submit"
-                  disabled={!newComment.trim() || isSending}
-                  className="w-8 h-8 rounded-xl bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary flex items-center justify-center shrink-0 disabled:opacity-30 transition-all active:scale-95"
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      toast.loading("Triggering AI re-edit...", { id: "re-edit" });
+                      // We call the reject endpoint to trigger the AI loop using chat history
+                      await videoAPI.reject(videoId, "Re-edit requested from chat loop");
+                      toast.success("AI is re-editing the video!", { id: "re-edit", description: "It's analyzing this chat history now." });
+                    } catch (err) {
+                      toast.error("Failed to trigger AI", { id: "re-edit" });
+                    }
+                  }}
+                  className="w-full mt-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-indigo-500/10 to-violet-500/10 text-indigo-400 hover:from-indigo-500/20 hover:to-violet-500/20 border border-indigo-500/20 text-xs font-semibold transition-all"
                 >
-                  {isSending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Send className="w-3.5 h-3.5" />
-                  )}
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Apply Chat Feedback & Re-edit with AI
                 </button>
               </form>
             </div>

@@ -23,6 +23,8 @@ import {
   UserCheck,
   Calendar,
   FileText,
+  Sparkles,
+  LayoutGrid,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -56,6 +58,7 @@ interface VideoCardProps {
   onRawAccept?: (id: string) => void;
   onRawReject?: (id: string) => void;
   onUploadEdit?: (id: string) => void;
+  onExtractClips?: (id: string) => void;
   isLoading?: boolean;
   onDeleteForMe?: (id: string) => void;
   onDeleteForEveryone?: (id: string) => void;
@@ -78,6 +81,7 @@ export default function VideoCard({
   onRawAccept,
   onRawReject,
   onUploadEdit,
+  onExtractClips,
   isLoading = false,
   onDeleteForMe,
   onDeleteForEveryone,
@@ -223,7 +227,8 @@ export default function VideoCard({
       animate={{ opacity: 1, y: 0 }}
       layout
       style={{ willChange: "transform, opacity", transform: "translateZ(0)" }}
-      className="glass-card rounded-2xl overflow-visible card-hover group flex flex-col h-full border border-border/40 hover:border-border/80 bg-card transition-all duration-300 shadow-sm hover:shadow-lg relative"
+      onClick={() => router.push(`/dashboard/video/${video._id}`)}
+      className="glass-card rounded-2xl overflow-visible card-hover group flex flex-col h-full border border-border/40 hover:border-border/80 bg-card transition-all duration-300 shadow-sm hover:shadow-lg relative cursor-pointer"
     >
       {/* Rejection Note - "Hanging" effect */}
       {(video.status === "rejected" || video.status === "raw_rejected") && (video.rejectionReason || video.editorRejectionReason) && (
@@ -262,22 +267,22 @@ export default function VideoCard({
         className="relative aspect-video bg-muted/30 overflow-hidden cursor-pointer group/thumb rounded-t-2xl"
         onClick={handlePlayClick}
       >
-        <div className="absolute inset-0 flex items-center justify-center z-10 transition-transform duration-500 group-hover/thumb:scale-110">
-          <div className="w-14 h-14 rounded-full bg-background/20 backdrop-blur-md border border-white/20 flex items-center justify-center group-hover/thumb:bg-primary transition-colors shadow-2xl">
-            {isPlayingLoading ? (
-              <Loader2 className="w-6 h-6 text-white animate-spin" />
-            ) : (
-              <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-            )}
+        {/* Abstract Premium Placeholder */}
+        <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-[#111111] to-black overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] group-hover/thumb:opacity-10 transition-opacity duration-700">
+            <FileVideo className="w-40 h-40 text-primary" />
           </div>
         </div>
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary to-muted opacity-50 transition-opacity group-hover/thumb:opacity-40" />
-
-        {/* Placeholder Icon if no thumbnail (could check if videoError here too if we tried to preload) */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-          <FileVideo className="w-20 h-20" />
+        <div className="absolute inset-0 flex items-center justify-center z-10 transition-transform duration-500 group-hover/thumb:scale-105">
+          <div className="w-16 h-16 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 flex items-center justify-center group-hover/thumb:bg-white/10 group-hover/thumb:border-white/20 transition-all shadow-2xl">
+            {isPlayingLoading ? (
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Play className="w-7 h-7 text-white fill-white ml-1 opacity-90" />
+            )}
+          </div>
         </div>
 
         {/* Status Badge */}
@@ -353,72 +358,7 @@ export default function VideoCard({
           {video.description || "No description provided"}
         </p>
 
-        {/* Timeline View */}
-        {showTimeline && video.createdAt && (
-          <div className="mb-4 p-3 bg-secondary/20 rounded-lg border border-border/40">
-            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Timeline</div>
-            <div className="flex items-center gap-1 text-[10px]">
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-purple-500/10 text-purple-500 border border-purple-500/20">
-                <FileVideo className="w-3 h-3" />
-                <span>Uploaded</span>
-              </div>
-              <div className="w-4 h-px bg-border" />
-              {video.status === 'ai_processing' || video.status === 'editing_in_progress' ? (
-                <>
-                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                    <Bot className="w-3 h-3 animate-pulse" />
-                    <span>Processing</span>
-                  </div>
-                  <div className="w-4 h-px bg-border" />
-                </>
-              ) : null}
-              {video.status === 'pending' || video.status === 'approved' || video.status === 'uploaded' ? (
-                <>
-                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                    <Clock className="w-3 h-3" />
-                    <span>Review</span>
-                  </div>
-                  <div className="w-4 h-px bg-border" />
-                </>
-              ) : null}
-              {video.status === 'approved' ? (
-                <>
-                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                    <CheckCircle className="w-3 h-3" />
-                    <span>Approved</span>
-                  </div>
-                  <div className="w-4 h-px bg-border" />
-                </>
-              ) : null}
-              {video.status === 'uploaded' ? (
-                <div className="flex items-center gap-1 px-2 py-1 rounded bg-red-500/10 text-red-500 border border-red-500/20">
-                  <Youtube className="w-3 h-3" />
-                  <span>Live on YT</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/30 text-muted-foreground border border-border/30">
-                  <Youtube className="w-3 h-3" />
-                  <span>Pending</span>
-                </div>
-              )}
-            </div>
-            {goLiveDate && (
-              <div className="mt-2 flex items-center gap-2 text-[11px] text-foreground">
-                <Clock className="w-3 h-3 text-muted-foreground" />
-                <span>
-                  {isLive
-                    ? `Live on YouTube since ${goLiveDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                    : `Goes live at ${goLiveDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${minutesToLive !== null ? ` (${minutesToLive}m)` : ""}`}
-                </span>
-              </div>
-            )}
-            {video.updatedAt && (
-              <div className="mt-2 text-[9px] text-muted-foreground/60">
-                Last update: {new Date(video.updatedAt).toLocaleString()}
-              </div>
-            )}
-          </div>
-        )}
+
 
         {/* Task Brief Banner */}
         {taskBrief && (
@@ -461,15 +401,15 @@ export default function VideoCard({
               <button
                 onClick={(e) => { e.stopPropagation(); onApprove?.(video._id); }}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-bold uppercase tracking-wide border border-emerald-500/20 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-bold uppercase tracking-wide border border-emerald-500/20 disabled:opacity-50 shadow-sm"
               >
                 <CheckCircle className="w-4 h-4" />
-                {video.status === "approved" ? "Retry Upload" : "Approve"}
+                {video.status === "approved" ? "Retry" : "Approve"}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onReject?.(video._id); }}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors text-xs font-bold uppercase tracking-wide border border-red-500/20 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors text-xs font-bold uppercase tracking-wide border border-red-500/20 disabled:opacity-50 shadow-sm"
               >
                 <XCircle className="w-4 h-4" />
                 Reject
@@ -483,7 +423,7 @@ export default function VideoCard({
               <button
                 onClick={(e) => { e.stopPropagation(); onRawAccept?.(video._id); }}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-bold uppercase tracking-wide border border-emerald-500/20 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors text-xs font-bold uppercase tracking-wide border border-emerald-500/20 disabled:opacity-50 shadow-sm"
               >
                 <CheckCircle className="w-4 h-4" />
                 Accept
@@ -491,7 +431,7 @@ export default function VideoCard({
               <button
                 onClick={(e) => { e.stopPropagation(); onRawReject?.(video._id); }}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors text-xs font-bold uppercase tracking-wide border border-red-500/20 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors text-xs font-bold uppercase tracking-wide border border-red-500/20 disabled:opacity-50 shadow-sm"
               >
                 <XCircle className="w-4 h-4" />
                 Reject
@@ -603,18 +543,40 @@ export default function VideoCard({
           )}
         </div>
 
-        {/* Assign to Editor Button (Creator view on raw_uploaded) */}
-        {onAssign && video.status === "raw_uploaded" && (
-          <div className="px-5 pb-4">
-            <button
-              onClick={(e) => { e.stopPropagation(); onAssign(video._id); }}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-[#C8A97E]/10 hover:bg-[#C8A97E]/20 text-[#C8A97E] border border-[#C8A97E]/25 text-xs font-semibold transition-all"
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              {video.editorId ? "Reassign Editor" : "Assign to Editor"}
-            </button>
-          </div>
-        )}
+        {/* Bottom Actions */}
+        <div className="px-5 pb-5 flex flex-col gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/video/${video._id}`); }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-secondary text-foreground hover:bg-secondary/80 border border-border/40 text-xs font-semibold transition-all shadow-sm"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Open Workspace
+          </button>
+          
+          {((onAssign && video.status === "raw_uploaded") || onExtractClips) && (
+            <>
+              {onAssign && video.status === "raw_uploaded" && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onAssign(video._id); }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-[#C8A97E]/10 hover:bg-[#C8A97E]/20 text-[#C8A97E] border border-[#C8A97E]/25 text-xs font-semibold transition-all shadow-sm"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  {video.editorId ? "Reassign Editor" : "Assign to Editor"}
+                </button>
+              )}
+              {onExtractClips && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onExtractClips(video._id); }}
+                  disabled={isLoading}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-gradient-to-r from-indigo-500/10 to-purple-500/10 text-indigo-400 hover:from-indigo-500/20 hover:to-purple-500/20 border border-indigo-500/25 text-xs font-semibold transition-all disabled:opacity-50 shadow-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Extract AI Clips
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Comment Thread */}

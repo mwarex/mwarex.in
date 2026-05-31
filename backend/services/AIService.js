@@ -1,68 +1,125 @@
 const axios = require("axios");
 
+const PYTHON_API_URL = process.env.PYTHON_API_URL || "http://localhost:5001";
+
 class AIService {
     constructor() {
-        this.useMock = true; 
+        this.useMock = false; // REAL AI — no more mocks!
     }
 
-    getModel(modelName = "gemini-1.5-flash") {
-        return null;
+    /**
+     * Analyze a video using the real Python AI Engine.
+     * Triggers the full pipeline: Whisper transcription → LLM analysis → FFmpeg editing → captions → 9:16 crop
+     */
+    async analyzeVideo(videoUrl, title, description, videoId, io) {
+        const roomId = videoId ? videoId.toString().slice(-8) : "default";
+        
+        // Emit initial progress
+        if (io && roomId) {
+            io.to(`room_${roomId}`).emit("video_progress", {
+                videoId: videoId || "unknown",
+                percent: 5,
+                message: "Sending video to AI Engine..."
+            });
+        }
+
+        try {
+            // Trigger the real Python AI pipeline
+            const response = await axios.post(`${PYTHON_API_URL}/process_video`, {
+                videoId: videoId,
+                fileUrl: videoUrl,
+                aiPrompt: description || "Edit this video professionally — remove silences, fillers, and mistakes. Keep all meaningful content."
+            }, { timeout: 10000 });
+
+            return {
+                status: "processing",
+                message: "AI Engine processing video in background. Real-time progress will appear.",
+                isMockAnalysis: false
+            };
+        } catch (error) {
+            console.error("[AIService] Failed to reach Python AI Engine:", error.message);
+            
+            // Return meaningful error instead of fake data
+            return {
+                status: "error",
+                message: `AI Engine not reachable: ${error.message}. Make sure the Python server is running on ${PYTHON_API_URL}`,
+                isMockAnalysis: false
+            };
+        }
     }
 
-    mockAnalyzeVideo(videoUrl, title, description) {
-        const mockResults = {
-            status: "analyzed",
-            analysis: {
-                suggestedCuts: Math.floor(Math.random() * 10) + 5,
-                detectedSilence: Math.floor(Math.random() * 30) + 10,
-                contentScore: Math.floor(Math.random() * 20) + 80,
-                bestMoments: [
-                    { timestamp: 15, reason: "High engagement moment" },
-                    { timestamp: 45, reason: "Interesting visual" },
-                    { timestamp: 120, reason: "Good audio quality" }
-                ],
-                suggestedEdits: [
-                    "Cut silence at 0:15-0:22",
-                    "Remove filler words at 1:05",
-                    "Add transition at 2:30"
-                ],
-                estimatedDuration: Math.floor(Math.random() * 300) + 180,
-                thumbnailSuggestion: `https://image.pollinations.ai/prompt/${encodeURIComponent(title || 'video thumbnail')}`
-            },
-            processingTime: "45 seconds",
-            editedFileUrl: videoUrl,
-            isMockAnalysis: true
-        };
-        return mockResults;
-    }
-
+    /**
+     * Generate title suggestions using Groq Llama
+     */
     async generateTitles(keywords) {
-        return {
-            titles: [
-                `The Ultimate Guide to ${keywords}`,
-                `Why Everyone is Talking About ${keywords}`,
-                `I Tried ${keywords} and You Won't Believe This`,
-                `Stop Doing ${keywords} Wrong!`,
-                `10 Secrets About ${keywords}`,
-            ],
-            isMock: true,
-        };
+        try {
+            const response = await axios.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                    model: "llama-3.3-70b-versatile",
+                    messages: [
+                        { role: "system", content: "You are a YouTube title expert. Generate 5 click-worthy, SEO-optimized video titles. Return ONLY a JSON array of strings." },
+                        { role: "user", content: `Generate 5 viral YouTube titles about: ${keywords}` }
+                    ],
+                    temperature: 0.8,
+                    max_tokens: 512,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+            let text = response.data.choices[0].message.content;
+            text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+            const titles = JSON.parse(text);
+            return { titles, isMock: false };
+        } catch (error) {
+            console.error("Groq Title Generation Error:", error.message);
+            return {
+                titles: [
+                    `The Ultimate Guide to ${keywords}`,
+                    `Why Everyone is Talking About ${keywords}`,
+                    `I Tried ${keywords} and You Won't Believe This`,
+                    `Stop Doing ${keywords} Wrong!`,
+                    `10 Secrets About ${keywords}`,
+                ],
+                isMock: true,
+            };
+        }
     }
 
+    /**
+     * Generate thumbnail prompts using Groq Llama
+     */
     async generateThumbnailPrompts(topic) {
         try {
-            const model = this.getModel();
-            const prompt = `Generate 4 distinct, highly detailed visual descriptions for a YouTube thumbnail about: "${topic}". 
-    The descriptions should be optimized for an AI image generator (like Midjourney/Stable Diffusion).
-    Return ONLY a JSON array of strings. Example: ["Close up of...", "Wide shot of..."]. Do not add markdown.`;
+            const response = await axios.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                    model: "llama-3.3-70b-versatile",
+                    messages: [
+                        { role: "system", content: "You are a thumbnail design expert. Generate 4 detailed visual descriptions for AI image generation. Return ONLY a JSON array of strings." },
+                        { role: "user", content: `Generate 4 YouTube thumbnail descriptions for: "${topic}"` }
+                    ],
+                    temperature: 0.8,
+                    max_tokens: 512,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
 
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            let text = response.text();
+            let text = response.data.choices[0].message.content;
             text = text.replace(/```json/g, "").replace(/```/g, "").trim();
             return JSON.parse(text);
         } catch (error) {
-            console.warn("Gemini Error:", error.message);
+            console.warn("Groq Thumbnail Prompt Error:", error.message);
             return [
                 `Youtube thumbnail of ${topic}, high quality, 4k, vibrant colors`,
                 `Cinematic shot of ${topic}, dramatic lighting, hyperrealistic`,
@@ -72,13 +129,11 @@ class AIService {
         }
     }
 
+    /**
+     * Generate thumbnails using Pollinations.ai
+     */
     async generateThumbnails(topic) {
-        const prompts = [
-            `Youtube thumbnail of ${topic}, high quality, 4k, vibrant colors`,
-            `Cinematic shot of ${topic}, dramatic lighting, hyperrealistic`,
-            `Minimalist design of ${topic}, vector art style, clean background`,
-            `Close-up excessive detail of ${topic}, professional photography`,
-        ];
+        const prompts = await this.generateThumbnailPrompts(topic);
 
         return prompts.map((p) => {
             const seed = Math.floor(Math.random() * 1000000);
@@ -89,53 +144,67 @@ class AIService {
         });
     }
 
-    analyzeScore(title, description) {
-        let score = 70;
-        if (title && title.length > 20 && title.length < 60) score += 10;
-        if (description && description.length > 100) score += 10;
-        return Math.min(score, 100);
-    }
+    /**
+     * Analyze video SEO score using Groq Llama
+     */
+    async analyzeScore(title, description) {
+        try {
+            const response = await axios.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                    model: "llama-3.3-70b-versatile",
+                    messages: [
+                        { role: "system", content: "You are a YouTube SEO expert. Analyze the given title and description. Return ONLY a JSON object: {\"score\": number (0-100), \"tips\": [\"tip1\", \"tip2\"]}" },
+                        { role: "user", content: `Analyze this YouTube video:\nTitle: ${title}\nDescription: ${description}` }
+                    ],
+                    temperature: 0.3,
+                    max_tokens: 256,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
 
-    async analyzeVideo(videoUrl, title, description, videoId, io) {
-        const roomId = videoId ? videoId.toString().slice(-8) : "default";
-        
-        for (let i = 0; i <= 100; i += 10) {
-            if (io && roomId) {
-                io.to(`room_${roomId}`).emit("video_progress", {
-                    videoId: videoId || "unknown",
-                    percent: i,
-                    message: i < 30 ? "Analyzing video content..." : 
-                             i < 60 ? "Detecting scenes and audio..." :
-                             i < 90 ? "Generating edit suggestions..." : "Finalizing analysis..."
-                });
-            }
-            await new Promise(resolve => setTimeout(resolve, 500));
+            let text = response.data.choices[0].message.content;
+            text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+            const result = JSON.parse(text);
+            return result.score || 70;
+        } catch (error) {
+            // Fallback: basic heuristic
+            let score = 70;
+            if (title && title.length > 20 && title.length < 60) score += 10;
+            if (description && description.length > 100) score += 10;
+            return Math.min(score, 100);
         }
-
-        return this.mockAnalyzeVideo(videoUrl, title, description);
     }
 
+    /**
+     * AI Chat Assistant powered by Groq Llama 3.3 70B
+     */
     async chat(messages) {
         const systemPrompt = `You are the MWareX Autonomous AI, the central intelligence behind the MWareX content platform.
 MWareX is a revolutionary platform where Creators upload raw videos and the AI autonomously edits them — removing silences, mistakes, and stutters while preserving cinematic B-roll and aesthetic shots.
 
 Key Features you can explain:
-- Autonomous AI Video Editing (powered by Gemini multimodal analysis)
-- YouTube Auto-Publish (one-click publish to YouTube after approval)
-- AI Video Editor (that's you!) for content guidance
-- AI Thumbnail Generator (that's you!) for content guidance
-- AI Title Generator (that's you!) for content guidance
-- AI Script Generator (that's you!) for content guidance
-- AI Description Generator (that's you!) for content guidance
+- Autonomous AI Video Editing (powered by Groq Whisper + Llama 3.3 + FFmpeg)
+- Real speech-to-text transcription with word-level timestamps
+- Intelligent silence and filler word removal
+- Auto-generated captions (TikTok/Reels style)
+- 9:16 auto-crop for Instagram Reels / YouTube Shorts
+- B-roll stock footage insertion from Pexels
+- YouTube Auto-Publish (one-click publish after approval)
+- AI Clip Extractor (long video → 3-5 viral short clips)
+- Multi-platform export (YouTube, Instagram, LinkedIn, Twitter/X)
 - Real-time AI Processing progress tracking
 - AI Chat Assistant (that's you!) for content guidance
-- Multi-room workspace for organizing content
 - Creator-Editor collaboration workflow
 
 Be helpful, concise, slightly enthusiastic. Use markdown when making lists. Keep responses under 150 words unless asked for detail.`;
 
         try {
-         
             const formattedMessages = messages.map(m => ({
                 role: m.role === 'model' ? "assistant" : "user",
                 content: m.text

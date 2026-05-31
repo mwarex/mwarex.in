@@ -114,6 +114,12 @@ export const videoAPI = {
     thumbnailUrl?: string;
     creatorId?: string;
   }) => api.post("/api/v1/videos/register-s3", data),
+
+  extractClips: (data: {
+    youtubeUrl?: string;
+    videoId?: string;
+    roomId?: string;
+  }) => api.post("/api/v1/videos/extract-clips", data),
 };
 
 

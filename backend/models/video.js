@@ -59,7 +59,33 @@ const videoSchema = new mongoose.Schema({
   aiProgress: {
     percent: { type: Number, default: 0 },
     message: { type: String, default: "" }
-  }
+  },
+
+  // AI Processing outputs
+  transcript: { type: String, default: "" },
+  captionFileUrl: { type: String, default: "" },
+  portraitFileUrl: { type: String, default: "" },
+
+  // Clip Extractor features
+  isClip: { type: Boolean, default: false },
+  parentVideoId: { type: mongoose.Schema.Types.ObjectId, ref: "Video" },
+  viralScore: { type: Number, default: 0 },
+  aspectRatio: { type: String, enum: ["16:9", "9:16", "1:1"], default: "16:9" },
+
+  // Structured clips array (from AI analysis)
+  clips: [{
+    id: String,
+    title: String,
+    score: String,
+    duration: String,
+    hashtags: String,
+    startTime: String,
+    endTime: String,
+    fileUrl: String,
+    portraitFileUrl: String,
+    captionFileUrl: String,
+    aspectRatio: { type: String, default: "16:9" }
+  }]
 }, { timestamps: true });
 
 const videoModel = mongoose.models.Video || mongoose.model("Video", videoSchema);

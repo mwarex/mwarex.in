@@ -19,7 +19,6 @@ import {
   Video as VideoIcon,
   Menu,
   ChevronRight,
-  ChevronLeft,
   Loader2,
   LayoutDashboard,
   X,
@@ -40,8 +39,7 @@ import {
   Linkedin,
   Twitter,
   Link2,
-  PanelLeftClose,
-  PanelLeftOpen,
+  PanelLeftClose
 } from "lucide-react";
 import VideoCard from "@/components/VideoCard";
 import { videoAPI, inviteAPI, getGoogleAuthUrl, paymentAPI, userAPI, roomAPI } from "@/lib/api";
@@ -61,6 +59,8 @@ import AIPipeline from "@/components/AIPipeline";
 import { runFakeGeminiProxy } from "@/lib/fakeGeminiProxy";
 import AssignEditorModal from "@/components/AssignEditorModal";
 import EditorRosterPanel from "@/components/EditorRosterPanel";
+import ClipExtractorModal from "@/components/ClipExtractorModal";
+import ClipsGridView from "@/components/ClipsGridView";
 
 interface Video {
   _id: string;
@@ -77,6 +77,9 @@ interface Video {
   goLiveAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  isClip?: boolean;
+  viralScore?: number;
+  aspectRatio?: string;
 }
 
 type VideoOverride = {
@@ -105,7 +108,7 @@ export default function CreatorDashboard() {
   const geminiInFlight = useRef<Set<string>>(new Set());
   const geminiCancels = useRef<Record<string, () => void>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"pending" | "all" | "raw_uploaded">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "all" | "raw_uploaded" | "clips">("pending");
   const [activeView, setActiveView] = useState<"dashboard" | "marketplace" | "future" | "pipeline">("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -116,6 +119,7 @@ export default function CreatorDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [avatarLetter, setAvatarLetter] = useState("U");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [userData, setUserData] = useState<{ name?: string; email?: string; isDemo?: boolean } | null>(null);
   const [pageLoaded, setPageLoaded] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
@@ -150,21 +154,8 @@ export default function CreatorDashboard() {
     videoId: null,
   });
 
-  // Sidebar collapse state (persisted)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("sidebarCollapsed") === "true";
-    }
-    return false;
-  });
-
-  const toggleSidebarCollapse = () => {
-    setIsSidebarCollapsed(v => {
-      const next = !v;
-      localStorage.setItem("sidebarCollapsed", String(next));
-      return next;
-    });
-  };
+  // Clip Extractor
+  const [isClipExtractorOpen, setIsClipExtractorOpen] = useState(false);
 
   useEffect(() => {
     const data = getUserData();
@@ -422,6 +413,27 @@ export default function CreatorDashboard() {
     }
   };
 
+  const handleExtractClips = async (videoId: string) => {
+    try {
+      setActionLoading(videoId);
+      await videoAPI.extractClips({ videoId, roomId: currentRoom?._id });
+      toast.success("Clip extraction started", { description: "The AI is analyzing the long video. It will appear in the Clips tab when ready." });
+      setLocalOverrides(prev => ({
+        ...prev,
+        [videoId]: {
+          ...(prev[videoId] || {}),
+          status: "ai_processing",
+          aiProgress: { percent: 0, message: "Initializing AI Clip Extractor..." }
+        }
+      }));
+    } catch (error) {
+      toast.error("Failed to start clip extraction");
+      console.error(error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const copyInviteLink = () => {
     navigator.clipboard.writeText(inviteLink);
     setIsCopied(true);
@@ -457,6 +469,13 @@ export default function CreatorDashboard() {
       const matchesSearch =
         video.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         video.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+      if (activeTab === "clips") {
+        return matchesSearch && video.isClip === true;
+      }
+      
+      if (video.isClip === true) return false;
+      
       const matchesTab =
         activeTab === "all" ||
         (activeTab === "raw_uploaded" && (video.status === "raw_uploaded" || video.status === "editing_in_progress" || video.status === "ai_processing")) ||
@@ -818,47 +837,44 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <motion.aside
-        animate={{ width: isSidebarCollapsed ? 64 : 256 }}
-        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        initial={{ width: 256, x: -280 }}
+        animate={{ 
+          x: isSidebarOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth >= 1024 ? 0 : -280),
+          width: isSidebarCollapsed && typeof window !== 'undefined' && window.innerWidth >= 1024 ? 80 : 256
+        }}
         className={cn(
-          "fixed lg:relative inset-y-0 left-0 z-50 bg-card border-r border-border flex flex-col transition-transform duration-300 ease-out overflow-hidden",
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full",
-          "lg:translate-x-0"
+          "fixed lg:relative inset-y-0 left-0 z-50 bg-card border-r border-border flex flex-col transition-transform duration-300 ease-out overflow-x-hidden",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Logo + Collapse Toggle */}
-        <div className={cn("p-4 border-b border-border flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between")}>
-          {!isSidebarCollapsed && <MWareXLogo showText={true} size="md" />}
-          {isSidebarCollapsed && (
-            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center text-white font-bold text-xs">
-              M
-            </div>
+        {/* Logo Area */}
+        <div className={cn("p-5 border-b border-border flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between")}>
+          <div className="min-w-max"><MWareXLogo showText={!isSidebarCollapsed} size="md" /></div>
+          {!isSidebarCollapsed && (
+            <button 
+              onClick={() => setIsSidebarCollapsed(true)}
+              className="hidden lg:flex p-1.5 rounded-lg hover:bg-secondary text-muted-foreground transition-colors"
+            >
+              <PanelLeftClose className="w-5 h-5" />
+            </button>
           )}
-          <button
-            onClick={toggleSidebarCollapse}
-            className="hidden lg:flex w-7 h-7 rounded-lg items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
-            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-          </button>
         </div>
 
         {/* Workspace Switcher */}
-        {!isSidebarCollapsed && (
-        <div className="px-3 pt-3 pb-1">
+        <div className={cn("pt-3 pb-1", isSidebarCollapsed ? "px-2" : "px-3")}>
           <div className="relative group">
-            <button className="w-full flex items-center justify-between p-2 rounded-lg bg-secondary/50 hover:bg-secondary border border-transparent hover:border-border transition-all">
+            <button className={cn("w-full flex items-center rounded-lg bg-secondary/50 hover:bg-secondary border border-transparent hover:border-border transition-all", isSidebarCollapsed ? "p-2 justify-center" : "p-2 justify-between")}>
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
                   {currentRoom?.name?.[0] || "W"}
                 </div>
-                <span className="font-medium text-sm truncate">{currentRoom?.name || "Select Workspace"}</span>
+                {!isSidebarCollapsed && <span className="font-medium text-sm truncate">{currentRoom?.name || "Select Workspace"}</span>}
               </div>
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              {!isSidebarCollapsed && <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
             </button>
 
             {/* Dropdown */}
-            <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-lg shadow-xl overflow-hidden hidden group-focus-within:block group-hover:block z-50">
+            <div className="absolute top-full left-0 mt-2 min-w-[200px] w-full bg-popover border border-border rounded-lg shadow-xl overflow-hidden hidden group-focus-within:block group-hover:block z-50">
               <div className="max-h-48 overflow-y-auto p-1">
                 {rooms.map(room => (
                   <button
@@ -869,8 +885,8 @@ export default function CreatorDashboard() {
                       currentRoom?._id === room._id ? "bg-primary/10 text-primary" : "hover:bg-secondary text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    <span className="truncate">{room.name}</span>
-                    {currentRoom?._id === room._id && <Check className="w-3 h-3 ml-auto" />}
+                    <span className="truncate flex-1">{room.name}</span>
+                    {currentRoom?._id === room._id && <Check className="w-3 h-3 shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -879,23 +895,22 @@ export default function CreatorDashboard() {
                   onClick={() => setIsRoomModalOpen(true)}
                   className="w-full flex items-center gap-2 p-2 rounded-md text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
                 >
-                  <Plus className="w-3 h-3" />
-                  Create New Workspace
+                  <Plus className="w-3 h-3 shrink-0" />
+                  <span className="truncate">Create New Workspace</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
-        )}
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className={cn("flex-1 space-y-1 overflow-y-auto", isSidebarCollapsed ? "p-2" : "p-4")}>
           {!isSidebarCollapsed && <p className="text-[10px] font-semibold text-muted-foreground px-3 mb-3 uppercase tracking-widest">Menu</p>}
 
           <button 
             onClick={() => setActiveView("dashboard")}
-            className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", activeView === "dashboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
-            title="Dashboard"
+            title={isSidebarCollapsed ? "Dashboard" : undefined}
+            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-colors cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "dashboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
           >
            <LayoutDashboard className="w-4 h-4 shrink-0" />
            {!isSidebarCollapsed && <span>Dashboard</span>}
@@ -906,8 +921,8 @@ export default function CreatorDashboard() {
               setSettingsTab('aiConfig');
               setIsSettingsOpen(true);
             }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
-            title="AI Brain Settings"
+            title={isSidebarCollapsed ? "AI Brain Settings" : undefined}
+            className={cn("w-full flex items-center py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3")}
           >
             <Bot className="w-4 h-4 shrink-0" />
             {!isSidebarCollapsed && <span>AI Brain Settings</span>}
@@ -915,8 +930,8 @@ export default function CreatorDashboard() {
 
           <button
             onClick={() => { setIsIntegrationsOpen(true); setIsSidebarOpen(false); }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
-            title="Integrations"
+            title={isSidebarCollapsed ? "Integrations" : undefined}
+            className={cn("w-full flex items-center py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3")}
           >
             <Link2 className="w-4 h-4 shrink-0" />
             {!isSidebarCollapsed && <span>Integrations</span>}
@@ -924,8 +939,8 @@ export default function CreatorDashboard() {
 
           <button
             onClick={() => { setActiveView("pipeline"); setIsSidebarOpen(false); }}
-            className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors", activeView === "pipeline" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
-            title="AI Pipeline"
+            title={isSidebarCollapsed ? "AI Pipeline" : undefined}
+            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-colors", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "pipeline" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
           >
             <Cpu className="w-4 h-4 shrink-0" />
             {!isSidebarCollapsed && <span>AI Pipeline</span>}
@@ -933,8 +948,8 @@ export default function CreatorDashboard() {
 
           <button
             onClick={() => { setActiveView("future"); setIsSidebarOpen(false); }}
-            className={cn("w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors", activeView === "future" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
-            title="Future Features"
+            title={isSidebarCollapsed ? "Future Features" : undefined}
+            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-colors", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "future" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
           >
             <Sparkles className="w-4 h-4 shrink-0" />
             {!isSidebarCollapsed && <span>Future Features</span>}
@@ -947,8 +962,8 @@ export default function CreatorDashboard() {
               setSettingsTab('general');
               setIsSettingsOpen(true);
             }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
-            title="Settings"
+            title={isSidebarCollapsed ? "Settings" : undefined}
+            className={cn("w-full flex items-center py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3")}
           >
             <Settings className="w-4 h-4 shrink-0" />
             {!isSidebarCollapsed && <span>Settings</span>}
@@ -956,51 +971,47 @@ export default function CreatorDashboard() {
         </nav>
 
         {/* Team / Editor Roster Panel */}
-        <EditorRosterPanel
-          editors={editors}
-          currentRoom={currentRoom}
-          onRemoveEditor={handleRemoveEditor}
-          onInviteSent={(email, link) => {
-            setInviteLink(link);
-            setInviteEmail(email);
-          }}
-          sendInvite={async (email, link) => {
-            await inviteAPI.sendInvite(email, link);
-          }}
-          workspaceName={currentRoom?.name}
-          videosByEditorId={videos.reduce((acc, v) => {
-            if (v.editorId && typeof v.editorId === 'object') {
-              const eid = (v.editorId as any)._id;
-              acc[eid] = (acc[eid] || 0) + (v.status === 'editing_in_progress' || v.status === 'raw_uploaded' ? 1 : 0);
-            }
-            return acc;
-          }, {} as Record<string, number>)}
-        />
+        {!isSidebarCollapsed && (
+          <EditorRosterPanel
+            editors={editors}
+            currentRoom={currentRoom}
+            onRemoveEditor={handleRemoveEditor}
+            onInviteSent={(email, link) => {
+              setInviteLink(link);
+              setInviteEmail(email);
+            }}
+            sendInvite={async (email, link) => {
+              await inviteAPI.sendInvite(email, link);
+            }}
+            workspaceName={currentRoom?.name}
+            videosByEditorId={videos.reduce((acc, v) => {
+              if (v.editorId && typeof v.editorId === 'object') {
+                const eid = (v.editorId as any)._id;
+                acc[eid] = (acc[eid] || 0) + (v.status === 'editing_in_progress' || v.status === 'raw_uploaded' ? 1 : 0);
+              }
+              return acc;
+            }, {} as Record<string, number>)}
+          />
+        )}
 
         {/* User Profile */}
-        <div className={cn("p-4 border-t border-border", isSidebarCollapsed ? "flex justify-center" : "")}>
-          {isSidebarCollapsed ? (
-            <button
-              onClick={handleLogout}
-              className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-bold text-sm hover:opacity-90 transition-opacity"
-              title={`Logout (${userData?.name})`}
-            >
+        <div className={cn("border-t border-border flex items-center", isSidebarCollapsed ? "p-2 justify-center" : "p-4")}>
+          <div className={cn("flex items-center rounded-lg bg-secondary/50", isSidebarCollapsed ? "p-0 bg-transparent justify-center" : "gap-3 p-2 w-full")}>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-bold text-sm shrink-0 cursor-pointer" onClick={isSidebarCollapsed ? handleLogout : undefined} title={isSidebarCollapsed ? "Logout" : undefined}>
               {avatarLetter}
-            </button>
-          ) : (
-            <div className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white font-bold text-sm">
-                {avatarLetter}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{userData?.name || "Creator"}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{userData?.email}</p>
-              </div>
-              <button onClick={handleLogout} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors" title="Logout">
-                <LogOut className="w-4 h-4" />
-              </button>
             </div>
-          )}
+            {!isSidebarCollapsed && (
+              <>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{userData?.name || "Creator"}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{userData?.email}</p>
+                </div>
+                <button onClick={handleLogout} className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Logout">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </motion.aside>
 
@@ -1021,6 +1032,14 @@ export default function CreatorDashboard() {
             >
               <Menu className="w-5 h-5" />
             </button>
+            {isSidebarCollapsed && (
+              <button
+                onClick={() => setIsSidebarCollapsed(false)}
+                className="hidden lg:flex p-2 -ml-2 rounded-lg hover:bg-secondary text-muted-foreground transition-colors"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
             <div>
               <h1 className="text-lg font-semibold">Dashboard</h1>
               <p className="text-xs text-muted-foreground hidden sm:block">Welcome back, {userData?.name}</p>
@@ -1038,8 +1057,15 @@ export default function CreatorDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setIsClipExtractorOpen(true)}
+              className="flex items-center gap-2 h-10 px-5 rounded-full bg-gradient-to-b from-[#2C2C2E] to-[#1C1C1E] text-white border border-black/80 active:scale-[0.96] transition-transform cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_2px_4px_rgba(255,255,255,0.05),0_4px_10px_rgba(0,0,0,0.4),0_1px_2px_rgba(0,0,0,0.2)] font-medium text-sm"
+            >
+              <Youtube className="w-4 h-4" />
+              <span className="hidden sm:inline">Import YouTube</span>
+            </button>
+            <button
               onClick={() => setIsS3UploadOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-secondary text-foreground rounded-lg font-medium text-sm hover:bg-secondary/80 transition-colors"
+              className="flex items-center gap-2 h-10 px-5 rounded-full bg-gradient-to-b from-[#2C2C2E] to-[#1C1C1E] text-white border border-black/80 active:scale-[0.96] transition-transform cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_2px_4px_rgba(255,255,255,0.05),0_4px_10px_rgba(0,0,0,0.4),0_1px_2px_rgba(0,0,0,0.2)] font-medium text-sm"
             >
               <VideoIcon className="w-4 h-4" />
               <span className="hidden sm:inline">Upload Raw</span>
@@ -1049,7 +1075,7 @@ export default function CreatorDashboard() {
                 setSettingsTab('models');
                 setIsSettingsOpen(true);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
+              className="flex items-center gap-2 h-10 px-5 rounded-full bg-gradient-to-b from-[#2C2C2E] to-[#1C1C1E] text-white border border-black/80 active:scale-[0.96] transition-transform cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer] shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_2px_4px_rgba(255,255,255,0.05),0_4px_10px_rgba(0,0,0,0.4),0_1px_2px_rgba(0,0,0,0.2)] font-medium text-sm"
             >
               <Bot className="w-4 h-4" />
               <span className="hidden sm:inline">AI Models</span>
@@ -1103,17 +1129,17 @@ export default function CreatorDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
                 className={cn(
-                  "bg-card border rounded-xl p-4 md:p-5 hover:shadow-md transition-all duration-200 cursor-default",
+                  "bg-card/40 backdrop-blur-xl border border-white/5 rounded-2xl p-4 md:p-5 hover:bg-card/60 hover:shadow-xl hover:shadow-black/20 transition-all duration-300 cursor-default",
                   stat.border
                 )}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", stat.bg)}>
+                  <div className={cn("w-12 h-12 rounded-full flex items-center justify-center shadow-inner", stat.bg)}>
                     <stat.icon className={cn("w-5 h-5", stat.color)} />
                   </div>
                 </div>
-                <p className="text-2xl md:text-3xl font-bold">{stat.value}</p>
-                <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+                <p className="text-2xl md:text-3xl font-bold tracking-tight">{stat.value}</p>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">{stat.label}</p>
               </motion.div>
             ))}
 
@@ -1125,14 +1151,14 @@ export default function CreatorDashboard() {
               transition={{ delay: 0.25 }}
               onClick={() => isRevenueLocked && setIsUpgradeModalOpen(true)}
               className={cn(
-                "bg-card border rounded-xl p-4 md:p-5 transition-all duration-200 relative group",
+                "bg-card/40 backdrop-blur-xl border border-white/5 rounded-2xl p-4 md:p-5 hover:bg-card/60 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 relative group",
                 isRevenueLocked
-                  ? "cursor-pointer border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10 cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
+                  ? "cursor-pointer border-indigo-500/20 cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
                   : "cursor-default border-indigo-500/20"
               )}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-indigo-500/10">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-indigo-500/10 shadow-inner">
                   <DollarSign className="w-5 h-5 text-indigo-500" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -1152,17 +1178,17 @@ export default function CreatorDashboard() {
 
               {isRevenueLocked ? (
                 <>
-                  <p className="text-2xl md:text-3xl font-bold blur-sm select-none">$1,250.00</p>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                  <p className="text-2xl md:text-3xl font-bold blur-sm select-none tracking-tight">$1,250.00</p>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
                     <span className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
                       Unlock Revenue
                     </span>
                   </div>
                 </>
               ) : (
-                <p className="text-2xl md:text-3xl font-bold">$0.00</p>
+                <p className="text-2xl md:text-3xl font-bold tracking-tight">$0.00</p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">Estimated Revenue</p>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">Estimated Revenue</p>
             </motion.div>
 
             {/* Editing Tools Card (Locked) */}
@@ -1172,14 +1198,14 @@ export default function CreatorDashboard() {
               transition={{ delay: 0.3 }}
               onClick={() => isRevenueLocked && setIsUpgradeModalOpen(true)}
               className={cn(
-                "bg-card border rounded-xl p-4 md:p-5 transition-all duration-200 relative group",
+                "bg-card/40 backdrop-blur-xl border border-white/5 rounded-2xl p-4 md:p-5 hover:bg-card/60 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 relative group",
                 isRevenueLocked
-                  ? "cursor-pointer border-violet-500/30 hover:shadow-lg hover:shadow-violet-500/10 cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
+                  ? "cursor-pointer border-violet-500/20 cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]"
                   : "cursor-default border-violet-500/20"
               )}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-violet-500/10">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-violet-500/10 shadow-inner">
                   <Wand2 className="w-5 h-5 text-violet-500" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -1199,17 +1225,17 @@ export default function CreatorDashboard() {
 
               {isRevenueLocked ? (
                 <>
-                  <p className="text-xl md:text-2xl font-bold blur-sm select-none">Premium Access</p>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                  <p className="text-xl md:text-2xl font-bold blur-sm select-none tracking-tight">Premium Access</p>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
                     <span className="bg-violet-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
                       Unlock Tools
                     </span>
                   </div>
                 </>
               ) : (
-                <p className="text-xl md:text-2xl font-bold">Access Granted</p>
+                <p className="text-xl md:text-2xl font-bold tracking-tight">Access Granted</p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">Editing Tools</p>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">Editing Tools</p>
             </motion.div>
           </motion.div>
 
@@ -1287,29 +1313,29 @@ export default function CreatorDashboard() {
                 return (
                   <div
                     key={videoId}
-                    className="relative overflow-hidden rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/5 via-violet-500/5 to-purple-500/5 p-4 md:p-5"
+                    className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-4 md:p-5 shadow-2xl"
                   >
                     {/* Animated background pulse */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-violet-500/10 to-indigo-500/10 animate-pulse opacity-30" />
+                    <div className="absolute inset-0 bg-violet-500/5 animate-pulse" />
                     
                     <div className="relative flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-                        <Bot className="w-6 h-6 text-indigo-400 animate-pulse" />
+                      <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
+                        <Bot className="w-6 h-6 text-violet-400 animate-pulse" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-semibold text-foreground">AI Processing Active</h3>
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <h3 className="text-sm font-semibold text-white/90">AI Processing Active</h3>
+                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                           </div>
-                          <span className="text-lg font-bold text-indigo-400">{progress.percent}%</span>
+                          <span className="text-lg font-bold text-violet-400">{progress.percent}%</span>
                         </div>
                         <p className="text-xs text-muted-foreground truncate mb-2">
-                          {processingVideo?.title || "Video"} — {progress.message}
+                          {processingVideo?.title || "Video"} — <span className="text-white/70">{progress.message}</span>
                         </p>
-                        <div className="w-full h-2 bg-secondary/80 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
                           <motion.div
-                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500"
+                            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]"
                             initial={{ width: 0 }}
                             animate={{ width: `${progress.percent}%` }}
                             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -1331,21 +1357,21 @@ export default function CreatorDashboard() {
             className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6"
           >
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search videos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-secondary/50 border border-border focus:border-primary/50 rounded-lg pl-10 pr-4 py-2.5 text-sm outline-none transition-colors focus:bg-background"
+                className="w-full bg-secondary/50 border border-border focus:border-primary/50 rounded-full pl-10 pr-5 py-2.5 text-sm outline-none transition-colors focus:bg-background shadow-sm"
               />
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
+            <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
               <button
                 onClick={() => setActiveTab("pending")}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
+                  "px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap shadow-sm",
                   activeTab === "pending"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -1356,7 +1382,7 @@ export default function CreatorDashboard() {
               <button
                 onClick={() => setActiveTab("raw_uploaded")}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
+                  "px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap shadow-sm",
                   activeTab === "raw_uploaded"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -1367,7 +1393,7 @@ export default function CreatorDashboard() {
               <button
                 onClick={() => setActiveTab("all")}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
+                  "px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap shadow-sm",
                   activeTab === "all"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -1376,8 +1402,20 @@ export default function CreatorDashboard() {
                 All Videos
               </button>
               <button
+                onClick={() => setActiveTab("clips")}
+                className={cn(
+                  "px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex items-center gap-1.5 shadow-sm",
+                  activeTab === "clips"
+                    ? "bg-red-600 text-white"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                AI Clips
+              </button>
+              <button
                 onClick={fetchVideos}
-                className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                className="p-2.5 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors shadow-sm"
               >
                 <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
               </button>
@@ -1402,34 +1440,53 @@ export default function CreatorDashboard() {
               ))}
             </div>
           ) : filteredVideos.length > 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-            >
-              {filteredVideos.map((video) => (
-                <VideoCard
-                  key={video._id}
-                  video={video}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
-                  showActions={video.status === "pending"}
-                  isLoading={actionLoading === video._id}
-                  onDeleteForMe={handleDeleteForMe}
-                  onDeleteForEveryone={
-                    ["raw_uploaded", "raw_rejected", "editing_in_progress"].includes(video.status)
-                      ? handleDeleteForEveryone
-                      : undefined
-                  }
-                  aiProgress={aiProgressMap[video._id]}
-                  showTimeline={true}
-                  onAssign={video.status === "raw_uploaded" ? (id) => setAssignModal({ isOpen: true, videoId: id }) : undefined}
-                  showComments={true}
-                  showActivityTimeline={true}
-                />
-              ))}
-            </motion.div>
+            activeTab === "clips" ? (
+              <ClipsGridView
+                clips={filteredVideos as any}
+                onDownload={(clip) => {
+                  window.open(clip.fileUrl, '_blank');
+                }}
+                onPublish={(clip, platform) => {
+                  toast.success(`Sent to ${platform}!`, { description: `Clip "${clip.title}" queued for publishing.` });
+                }}
+                onEdit={(clip) => {
+                  router.push(`/dashboard/review/${clip._id}`);
+                }}
+                onDelete={(clip) => {
+                  handleDeleteForEveryone(clip._id);
+                }}
+              />
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+              >
+                {filteredVideos.map((video) => (
+                  <VideoCard
+                    key={video._id}
+                    video={video as any}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    showActions={video.status === "pending"}
+                    isLoading={actionLoading === video._id}
+                    onDeleteForMe={handleDeleteForMe}
+                    onDeleteForEveryone={
+                      ["raw_uploaded", "raw_rejected", "editing_in_progress"].includes(video.status)
+                        ? handleDeleteForEveryone
+                        : undefined
+                    }
+                    aiProgress={aiProgressMap[video._id]}
+                    showTimeline={true}
+                    onAssign={video.status === "raw_uploaded" ? (id) => setAssignModal({ isOpen: true, videoId: id }) : undefined}
+                    onExtractClips={["raw_uploaded", "approved"].includes(video.status) && video.isClip !== true ? handleExtractClips : undefined}
+                    showComments={true}
+                    showActivityTimeline={true}
+                  />
+                ))}
+              </motion.div>
+            )
           ) : (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -1940,6 +1997,17 @@ export default function CreatorDashboard() {
             ? (videos.find(v => v._id === assignModal.videoId)?.title || "Untitled Video")
             : ""
         }
+      />
+
+      {/* Clip Extractor Modal */}
+      <ClipExtractorModal
+        isOpen={isClipExtractorOpen}
+        onClose={() => setIsClipExtractorOpen(false)}
+        onSubmit={async (url) => {
+          await videoAPI.extractClips({ youtubeUrl: url, roomId: currentRoom?._id });
+          toast.success("Extraction Started!", { description: "AI is downloading and analyzing the video. Clips will appear soon." });
+          setActiveTab("clips");
+        }}
       />
     </div>
   );
