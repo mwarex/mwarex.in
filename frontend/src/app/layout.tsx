@@ -7,7 +7,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { SmoothScrollProvider } from "@/components/smooth-scroll-provider";
 import { SeasonProvider } from "@/contexts/SeasonContext";
-import { SeasonalBackground, FloatingAmbientSwitcher } from "@/components/seasonal-background";
 import { Toaster } from "sonner";
 import { HomeStructuredData } from "@/components/home-structured-data";
 
@@ -117,44 +116,7 @@ export default function RootLayout({
           <OnboardingProvider>
             <SmoothScrollProvider>
               <SeasonProvider>
-                <div className="min-h-screen w-full relative bg-[#070707] text-[#fafafa]">
-                  {/* Subtle noise texture over pure dark background */}
-                  <div className="absolute inset-0 pointer-events-none opacity-20 filter contrast-[120%] z-0" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'1.5\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
-
-                  {/* Premium corner net/grid — 4 individual corners fading inward */}
-                  <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-                    {/* Top-left corner */}
-                    <div className="absolute top-0 left-0 w-[55%] h-[55%]" style={{
-                      backgroundImage: 'linear-gradient(rgba(200,169,126,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.07) 1px, transparent 1px)',
-                      backgroundSize: '40px 40px',
-                      maskImage: 'radial-gradient(ellipse at top left, black 0%, transparent 65%)',
-                      WebkitMaskImage: 'radial-gradient(ellipse at top left, black 0%, transparent 65%)'
-                    }} />
-                    {/* Top-right corner */}
-                    <div className="absolute top-0 right-0 w-[55%] h-[55%]" style={{
-                      backgroundImage: 'linear-gradient(rgba(200,169,126,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.07) 1px, transparent 1px)',
-                      backgroundSize: '40px 40px',
-                      maskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 65%)',
-                      WebkitMaskImage: 'radial-gradient(ellipse at top right, black 0%, transparent 65%)'
-                    }} />
-                    {/* Bottom-left corner */}
-                    <div className="absolute bottom-0 left-0 w-[55%] h-[55%]" style={{
-                      backgroundImage: 'linear-gradient(rgba(200,169,126,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.07) 1px, transparent 1px)',
-                      backgroundSize: '40px 40px',
-                      maskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 65%)',
-                      WebkitMaskImage: 'radial-gradient(ellipse at bottom left, black 0%, transparent 65%)'
-                    }} />
-                    {/* Bottom-right corner */}
-                    <div className="absolute bottom-0 right-0 w-[55%] h-[55%]" style={{
-                      backgroundImage: 'linear-gradient(rgba(200,169,126,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(200,169,126,0.07) 1px, transparent 1px)',
-                      backgroundSize: '40px 40px',
-                      maskImage: 'radial-gradient(ellipse at bottom right, black 0%, transparent 65%)',
-                      WebkitMaskImage: 'radial-gradient(ellipse at bottom right, black 0%, transparent 65%)'
-                    }} />
-                  </div>
-
-                  <SeasonalBackground />
-                  <FloatingAmbientSwitcher />
+                <div className="min-h-screen w-full relative bg-[#111111] text-[#fafafa]">
                   <div className="relative z-10 flex flex-col min-h-screen">
                     {children}
                   </div>
