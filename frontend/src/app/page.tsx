@@ -22,10 +22,11 @@ export default function LandingPage() {
     <ClientShell>
       <div className="min-h-screen text-[#fafafa] font-sans bg-[#111111] relative overflow-hidden w-full selection:bg-[#C8A97E]/30 selection:text-[#ffffff]">
       <div className="relative z-10 w-full">
-        <SiteHeader />
+        {/* SiteHeader is embedded inside HeroSection for the cinematic full-screen layout */}
 
         <main className="w-full">
           <HeroSection />
+
 
           {/* Trust / Partners Section - Seamless Marquee */}
           <section className="py-24 bg-[#111111] overflow-hidden">

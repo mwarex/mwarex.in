@@ -41,3 +41,4 @@ Thumbs.db
 # AWS & credentials — extra safety
 .aws/
 credentials
+ai_engine/uploads/

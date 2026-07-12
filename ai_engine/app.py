@@ -21,7 +21,6 @@ import subprocess
 import threading
 import traceback
 from urllib.parse import urlparse
-
 import requests
 import boto3
 from flask import Flask, request, jsonify
@@ -29,6 +28,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from groq import Groq
 import yt_dlp
+from local_pipeline import build_graph
 
 # ─────────────────────────────────────────────────────────────
 # Config
@@ -46,7 +46,7 @@ PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-# S3
+
 s3_client = boto3.client(
     "s3",
     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
@@ -55,7 +55,7 @@ s3_client = boto3.client(
 )
 BUCKET_NAME = os.getenv("AWS_S3_BUCKET")
 
-# Groq client (Whisper + Llama)
+
 groq_client = None
 if GROQ_API_KEY:
     groq_client = Groq(api_key=GROQ_API_KEY)
@@ -63,7 +63,7 @@ if GROQ_API_KEY:
 else:
     print("[AI ENGINE WARNING] GROQ_API_KEY missing!")
 
-# Gemini (optional multimodal fallback)
+
 try:
     import google.generativeai as genai
     if GEMINI_API_KEY:
@@ -75,10 +75,6 @@ except Exception as e:
 
 TMP_DIR = os.getenv("TMP_DIR", "/tmp/mwarex")
 os.makedirs(TMP_DIR, exist_ok=True)
-
-# ─────────────────────────────────────────────────────────────
-# Utilities
-# ─────────────────────────────────────────────────────────────
 
 def download_from_s3(file_url, local_path):
     """Download a file from any public URL or S3 using the bucket key."""
@@ -100,7 +96,6 @@ def download_from_s3(file_url, local_path):
         parsed = urlparse(file_url)
         s3_key = parsed.path.lstrip("/")
         if BUCKET_NAME and BUCKET_NAME in parsed.netloc:
-            # Strip bucket name if it's in the path (e.g. s3.amazonaws.com/bucket/key)
             if s3_key.startswith(BUCKET_NAME + "/"):
                 s3_key = s3_key[len(BUCKET_NAME)+1:]
                 
@@ -873,53 +868,31 @@ def process_video_background(video_id, file_url, ai_prompt):
         # ── Step 1: Download ──
         report_progress(video_id, 5, "Downloading video from cloud storage...")
         download_from_s3(file_url, input_file)
-        video_duration = get_video_duration(input_file)
-        print(f"[INFO] Video duration: {video_duration:.1f}s")
         
-        # ── Step 2: Extract audio ──
-        report_progress(video_id, 10, "Extracting audio track...")
-        extract_audio(input_file, audio_file)
+        # ── Step 2-9: Top 0.1% Editor Engine (Ollama + FFmpeg Single-Pass) ──
+        report_progress(video_id, 20, "Initiating Top 0.1% Editor Pipeline (Ollama)...")
+        pipeline_app = build_graph()
+        initial_state = {
+            "video_path": input_file,
+            "audio_path": "",
+            "video_duration": 0.0,
+            "words": [],
+            "segments": [],
+            "brolls": [],
+            "output_video_path": "",
+            "status": "Started"
+        }
         
-        # ── Step 3: Transcribe ──
-        report_progress(video_id, 20, "Transcribing speech with Groq Whisper AI...")
-        transcript = transcribe_audio(audio_file)
+        report_progress(video_id, 40, "Transcribing and Analyzing with AI...")
+        final_state = pipeline_app.invoke(initial_state)
+        final_16_9 = final_state.get("output_video_path")
         
-        # ── Step 4: Detect silences ──
-        report_progress(video_id, 30, "Detecting silences and gaps...")
-        silences = detect_silences(transcript["words"])
-        
-        # ── Step 5: LLM analysis ──
-        report_progress(video_id, 35, "AI analyzing content for intelligent cuts...")
-        analysis = llm_analyze_transcript(
-            transcript["text"],
-            transcript["segments"],
-            silences,
-            ai_prompt,
-            video_duration
-        )
-        
-        keep_segments = analysis["keep_segments"]
-        broll_moments = analysis["broll_moments"]
-        clip_suggestions = analysis.get("clip_suggestions", [])
-        
-        # ── Step 6: Cut and stitch ──
-        report_progress(video_id, 50, f"Cutting {len(keep_segments)} segments with FFmpeg...")
-        cut_and_stitch(input_file, keep_segments, cut_file, video_id)
-        
-        # ── Step 7: Generate captions ──
-        report_progress(video_id, 65, "Generating AI captions...")
-        generate_captions_ass(transcript["words"], keep_segments, ass_file)
-        
-        # ── Step 8: Burn captions ──
-        report_progress(video_id, 70, "Burning captions into video...")
-        burn_captions(cut_file, ass_file, captioned_file)
-        
-        # ── Step 9: B-roll ──
-        report_progress(video_id, 75, "Fetching and inserting B-roll footage...")
-        broll_clips = fetch_broll_clips(broll_moments)
-        insert_broll(captioned_file, broll_clips, broll_file)
-        
-        final_16_9 = broll_file if os.path.exists(broll_file) else captioned_file
+        if not final_16_9 or not os.path.exists(final_16_9):
+            raise RuntimeError("LangGraph Pipeline failed to produce output video.")
+            
+        ass_file_generated = f"{input_file}_full.ass"
+        if os.path.exists(ass_file_generated):
+            shutil.copy2(ass_file_generated, ass_file)
         
         # ── Step 10: 9:16 crop ──
         report_progress(video_id, 82, "Creating 9:16 Reels/Shorts version...")
@@ -953,22 +926,10 @@ def process_video_background(video_id, file_url, ai_prompt):
             "editedFileUrl": url_16_9,
             "portraitFileUrl": url_9_16,
             "captionFileUrl": caption_url,
-            "transcript": transcript["text"][:5000],  # Truncate for DB storage
+            "transcript": "Processed via Top 0.1% Editor Engine (Ollama)",
             "clips": [],
-            "message": f"AI edited: removed {len(silences)} silences, kept {len(keep_segments)} segments, generated captions"
+            "message": "AI Editing complete with cinematic B-roll and captions."
         }
-        
-        # Format clip suggestions for the frontend
-        for clip in clip_suggestions:
-            callback_payload["clips"].append({
-                "id": f"clip-{clip_suggestions.index(clip)+1}",
-                "title": clip.get("title", "Untitled Clip"),
-                "score": f"{clip.get('score', 70)}/100",
-                "duration": _format_duration(clip.get("end", 0) - clip.get("start", 0)),
-                "hashtags": clip.get("hashtags", "#MWareX"),
-                "startTime": _format_duration(clip.get("start", 0)),
-                "endTime": _format_duration(clip.get("end", 0)),
-            })
         
         webhook_url = f"{NODE_API_URL}/api/v1/videos/{video_id}/ai-callback"
         requests.post(webhook_url, json=callback_payload, timeout=15)

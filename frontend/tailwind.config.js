@@ -18,7 +18,8 @@ module.exports = {
         },
         extend: {
             fontFamily: {
-                sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
+                sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+                mono: ["var(--font-geist-mono)", "ui-monospace", "SFMono-Regular"],
                 serif: ["var(--font-playfair)", "ui-serif", "Georgia", "serif"],
                 orbitron: ["var(--font-orbitron)", "sans-serif"],
                 oswald: ["var(--font-oswald)", "sans-serif"],

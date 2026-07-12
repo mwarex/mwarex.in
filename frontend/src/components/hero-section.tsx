@@ -1,174 +1,210 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Play } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-
-const BACKGROUNDS = [
-    "/bg-images/10097.jpg"
-];
+import { MWareXLogo } from "@/components/mwarex-logo";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 
 export function HeroSection() {
-    const [currentBg, setCurrentBg] = useState(0);
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    const navLinks = [
+        { label: "Features", href: "/#features" },
+        { label: "Solutions", href: "/#workflow" },
+        { label: "How It Works", href: "/#workflow" },
+        { label: "Pricing", href: "/#pricing" },
+        { label: "Resources", href: "/support" },
+    ];
 
     return (
-        <section className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-12">
-            {/* Base Background Color */}
-            <div className="absolute inset-0 -z-30 w-full h-full bg-[#0a0a0a]"></div>
+        <section className="relative min-h-screen w-full overflow-hidden flex flex-col">
 
-            {/* Absolute Background Image Slider - Professional Smooth Merge */}
-            <div className="absolute inset-0 -z-20 w-full h-full overflow-hidden bg-black">
-                <AnimatePresence>
-                    <motion.div
-                        key={currentBg}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 2.5, ease: "easeInOut" }}
-                        className="absolute inset-0 w-full h-full lg:left-auto lg:right-0 lg:w-[85%] [mask-image:linear-gradient(to_right,transparent_0%,black_70%)]"
-                    >
-                        <img
-                            src={BACKGROUNDS[currentBg]}
-                            alt="Background"
-                            className="w-full h-full object-cover opacity-60 object-right"
-                        />
-                    </motion.div>
-                </AnimatePresence>
+            {/* ══ Full-Screen Background Image ══ */}
+            <div className="absolute inset-0 z-0">
+                <img
+                    src="/backkm.png"
+                    alt="MWareX Cinematic Background"
+                    className="w-full h-full object-cover object-center"
+                />
+                {/* Bottom vignette so text is always legible */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/30" />
+                {/* Left vignette for the text side */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
+                {/* Top vignette to blend nav */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent" />
+                
+                {/* ── Page Merge Gradient (Bottom Shading) ── */}
+                <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#111111] to-transparent z-10" />
             </div>
 
-            {/* Dark gradient overlay for deep contrast and blending */}
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#111111] via-[#111111]/75 to-[#111111]/10 pointer-events-none" />
-            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#111111] via-transparent to-[#111111]/50 pointer-events-none" />
+            {/* ══ Navigation Bar ══ */}
+            <motion.header
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="relative z-30 w-full flex items-center justify-between px-8 md:px-14 py-6"
+            >
+                {/* Left nav links */}
+                <nav className="hidden lg:flex items-center gap-7 text-[10px] font-bold tracking-[0.22em] uppercase text-white/50">
+                    {navLinks.slice(0, 3).map((link) => (
+                        <Link
+                            key={link.label}
+                            href={link.href}
+                            className="hover:text-white transition-colors duration-200 relative group"
+                        >
+                            {link.label}
+                            <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-white/60 group-hover:w-full transition-all duration-300" />
+                        </Link>
+                    ))}
+                </nav>
 
-            <div className="max-w-7xl mx-auto px-6 md:px-12 w-full z-10 pt-10">
-                <div className="flex items-center gap-4 text-[#C8A97E] text-[10px] font-bold tracking-[0.25em] mb-10 md:mb-16 uppercase opacity-90">
-                    <span className="w-12 h-[1px] bg-[#C8A97E] opacity-50"></span>
-                    MWAREX · EST. 2026
+                {/* Center logo (Made larger and slightly shifted right for perfect optical centering) */}
+                <Link href="/" className="absolute left-1/2 translate-x-[calc(-50%+6px)] z-50 hover:opacity-80 transition-opacity scale-125">
+                    <MWareXLogo showText={false} size="md" />
+                </Link>
+
+                {/* Right nav links + CTA */}
+                <nav className="hidden lg:flex items-center gap-7 text-[10px] font-bold tracking-[0.22em] uppercase text-white/50">
+                    {navLinks.slice(3).map((link) => (
+                        <Link
+                            key={link.label}
+                            href={link.href}
+                            className="hover:text-white transition-colors duration-200 relative group"
+                        >
+                            {link.label}
+                            <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-white/60 group-hover:w-full transition-all duration-300" />
+                        </Link>
+                    ))}
+                    <Link
+                        href="/auth/signup"
+                        className="ml-2 px-5 py-2.5 border border-white/30 text-white/80 hover:bg-white hover:text-black transition-all duration-300 tracking-[0.2em] text-[10px] font-bold"
+                    >
+                        Get Started
+                    </Link>
+                </nav>
+
+                {/* Mobile menu toggle */}
+                <button
+                    className="lg:hidden text-white ml-auto"
+                    onClick={() => setMenuOpen(!menuOpen)}
+                >
+                    {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+            </motion.header>
+
+            {/* Mobile menu */}
+            {menuOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-40 bg-black/95 flex flex-col items-center justify-center gap-8"
+                >
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.label}
+                            href={link.href}
+                            onClick={() => setMenuOpen(false)}
+                            className="text-[13px] font-bold tracking-[0.3em] uppercase text-white/60 hover:text-white transition-colors"
+                        >
+                            {link.label}
+                        </Link>
+                    ))}
+                    <Link href="/auth/signup" onClick={() => setMenuOpen(false)} className="mt-4 px-8 py-3 border border-white/30 text-white text-[11px] tracking-[0.25em] uppercase font-bold hover:bg-white hover:text-black transition-all">
+                        Get Started
+                    </Link>
+                </motion.div>
+            )}
+
+            {/* ══ Main Hero Content — Pinned to Bottom ══ */}
+            <div className="relative z-20 mt-auto w-full px-8 md:px-14 pb-12 md:pb-16 flex flex-col">
+                
+                {/* ── Top Block: Headings ── */}
+                <div className="flex flex-col gap-1 max-w-4xl mb-6">
+                    {/* H1: Bright white */}
+                    <motion.h1
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.9, delay: 0.3, ease: "easeOut" }}
+                        className="text-[2rem] md:text-[2.4rem] lg:text-[2.8rem] font-medium text-white leading-[1.1] tracking-tight mb-0 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] lg:whitespace-nowrap"
+                        style={{ fontFamily: 'var(--font-geist-sans), Inter, system-ui, sans-serif' }}
+                    >
+                        From Raw Video to Viral Content.
+                    </motion.h1>
+
+                    {/* Sub-headline: Shady grey */}
+                    <motion.h2
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.9, delay: 0.45, ease: "easeOut" }}
+                        className="text-[2rem] md:text-[2.4rem] lg:text-[2.8rem] font-normal text-white/50 leading-[1.1] tracking-tight mt-0 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] lg:whitespace-nowrap"
+                        style={{ fontFamily: 'var(--font-geist-sans), Inter, system-ui, sans-serif' }}
+                    >
+                        Experience the Future of Video Editing.
+                    </motion.h2>
                 </div>
 
-                <div className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-4xl mx-auto lg:mx-0">
-                    {/* Left Column: Content */}
-                    <div className="flex flex-col items-center lg:items-start relative z-30">
-                        {/* Main Heading with Elegant Typography */}
-                        <div className="mb-8 md:mb-10 w-full">
-                            <h1 className="text-[2.5rem] md:text-[3.5rem] lg:text-[4.5rem] font-orbitron uppercase text-[#ffffff] leading-[1.05] font-bold tracking-[0.05em]">
-                                <motion.div
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.8, ease: "easeOut" }}
-                                >
-                                    Simplify
-                                </motion.div>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
-                                >
-                                    Your Creator
-                                </motion.div>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 30 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                                    className="text-[#C8A97E] pr-4 ml-8 md:ml-0"
-                                >
-                                    Workflow.
-                                </motion.div>
-                            </h1>
-                        </div>
+                {/* ── Horizontal Divider Line ── */}
+                <motion.div 
+                    initial={{ opacity: 0, scaleX: 0 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    transition={{ duration: 1, delay: 0.5, ease: "easeInOut" }}
+                    className="w-full h-px bg-white/10 origin-left mb-8"
+                />
 
-                        {/* Subtitle - Typewriter Effect */}
-                        <div className="mb-10 md:mb-12 h-auto md:h-[120px] w-full flex justify-center lg:justify-start">
-                            <TypewriterText
-                                text="MWarex connects your editing team directly to your YouTube channel. Upload, review, chat, approve, and publish videos automatically — all in one secure workspace."
-                                className="text-[14px] md:text-[16px] font-oswald tracking-[0.15em] uppercase text-white/80 max-w-lg leading-relaxed flex flex-wrap justify-center lg:justify-start text-center lg:text-left"
-                            />
-                        </div>
-
-                        {/* CTA Buttons - Line style with Gold */}
+                {/* ── Bottom Block: Label/Buttons (Left) & Paragraphs (Right) ── */}
+                <div className="flex flex-col md:flex-row items-start justify-between w-full gap-10">
+                    
+                    {/* Left: Small caps label and CTA */}
+                    <div className="flex flex-col gap-6 max-w-sm">
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 1.2, delay: 0.6 }}
+                            className="text-[8px] md:text-[9px] font-medium tracking-[0.25em] uppercase text-white/40 font-sans"
+                        >
+                            AUTOMATE YOUR CONTENT. AMPLIFY YOUR REACH
+                        </motion.p>
+                        
+                        {/* CTA row (retained) */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ duration: 0.8, delay: 0.6 }}
-                            className="flex flex-col sm:flex-row items-center gap-6"
+                            transition={{ duration: 0.8, delay: 0.8 }}
+                            className="flex items-center gap-6"
                         >
                             <Link href="/auth/signup">
-                                <div className="group relative px-8 py-3.5 border border-[#C8A97E] text-[#C8A97E] rounded-none text-[10px] sm:text-[11px] font-bold tracking-[0.2em] uppercase transition-all duration-300 hover:bg-[#C8A97E] hover:text-[#111] hover:shadow-[0_0_20px_rgba(200,169,126,0.3)]">
-                                    <span className="relative flex items-center justify-center gap-3">
-                                        Start Free Trial
-                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 duration-300" />
-                                    </span>
+                                <div className="group flex items-center gap-3 px-6 py-3 border border-white/20 text-white/85 hover:bg-white hover:text-black text-[9px] font-bold tracking-[0.22em] uppercase transition-all duration-300">
+                                    Start Free Trial
+                                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-300" />
                                 </div>
                             </Link>
-
-                            <button
-                                onClick={() => toast.info("Demo Video Coming Soon", {
-                                    description: "We are currently finalizing the complete end-to-end workflow video. It will be officially uploaded very soon. Stay tuned!",
-                                    duration: 5000,
-                                })}
-                                className="group flex items-center gap-2 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-white/50 hover:text-white transition-colors duration-300"
-                            >
-                                <Play className="w-3 h-3 group-hover:scale-110 transition-transform duration-300" fill="currentColor" /> Watch Demo
-                            </button>
+                            <Link href="/auth/signin" className="text-[9px] font-bold tracking-[0.22em] uppercase text-white/40 hover:text-white/70 transition-colors">
+                                Sign In
+                            </Link>
                         </motion.div>
                     </div>
 
-                    {/* Right Column: Video Preview Area (Currently Hidden per user request) */}
-                    {/* 
-                           Reserved for future video implementation 
-                        */}
-
+                    {/* Right: Description paragraphs */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.7 }}
+                        className="hidden lg:flex flex-col gap-5 max-w-[360px]"
+                    >
+                        <p className="text-[12px] text-white/50 leading-[1.8] tracking-[0.01em] font-light">
+                        MwareX is an AI-powered content operations platform built for YouTube creators and editing teams. It centralizes collaboration, review, approvals, cloud storage, and publishing turning scattered workflows into one seamless production pipeline
+                        </p>
+                        <p className="text-[12px] text-white/40 leading-[1.8] tracking-[0.01em] font-light">
+                            AI that doesn't just assist — it anticipates your workflow, learns your style, and executes with cinematic precision.
+                        </p>
+                    </motion.div>
+                    
                 </div>
             </div>
+
         </section>
-    );
-}
-
-function TypewriterText({ text, className }: { text: string; className?: string }) {
-    const words = text.split(" ");
-
-    const container = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.04,
-                delayChildren: 0.5,
-            },
-        },
-    };
-
-    const child = {
-        hidden: { opacity: 0, y: 5 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                type: "spring" as const,
-                damping: 12,
-                stiffness: 200,
-            },
-        },
-    };
-
-    return (
-        <motion.div
-            variants={container}
-            initial="hidden"
-            animate="visible"
-            className={className}
-        >
-            {words.map((word, index) => (
-                <span key={index} className="mr-[0.3em] mb-1 flex">
-                    {word.split("").map((char, charIndex) => (
-                        <motion.span key={charIndex} variants={child}>
-                            {char}
-                        </motion.span>
-                    ))}
-                </span>
-            ))}
-        </motion.div>
     );
 }

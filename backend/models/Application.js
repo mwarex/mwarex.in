@@ -33,6 +33,6 @@ const applicationSchema = new mongoose.Schema({
         default: Date.now,
     },
 });
-
 const applicationModel = mongoose.models.Application || mongoose.model("Application", applicationSchema);
 module.exports = applicationModel;
+

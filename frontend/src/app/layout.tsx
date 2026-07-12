@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import { Inter, Playfair_Display, Orbitron, Oswald } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -100,9 +102,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body
-        className={`${inter.variable} ${playfair.variable} ${orbitron.variable} ${oswald.variable} antialiased bg-background text-foreground font-sans selection:bg-primary/20 selection:text-primary`}
+        className={`${GeistSans.className} antialiased bg-background text-foreground font-sans selection:bg-primary/20 selection:text-primary`}
       >
         <HomeStructuredData />
         <ThemeProvider
