@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Play, Download, Youtube, Instagram, Linkedin, Twitter, Sparkles, TrendingUp, Trash2, Edit2 } from "lucide-react";
-import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Pause, Download, Youtube, Instagram, Linkedin, Twitter, Sparkles, TrendingUp, Trash2, Edit2, Maximize2, Volume2, VolumeX, X } from "lucide-react";
+import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface Clip {
@@ -24,6 +24,8 @@ interface ClipsGridViewProps {
 }
 
 export default function ClipsGridView({ clips, onDownload, onPublish, onEdit, onDelete }: ClipsGridViewProps) {
+  const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
+
   if (clips.length === 0) {
     return (
       <div className="text-center py-20 bg-card border border-dashed border-border rounded-2xl">
@@ -39,23 +41,82 @@ export default function ClipsGridView({ clips, onDownload, onPublish, onEdit, on
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      {clips.map((clip) => (
-        <ClipCard
-          key={clip._id}
-          clip={clip}
-          onDownload={() => onDownload(clip)}
-          onPublish={(platform) => onPublish(clip, platform)}
-          onEdit={onEdit ? () => onEdit(clip) : undefined}
-          onDelete={onDelete ? () => onDelete(clip) : undefined}
-        />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {clips.map((clip) => (
+          <ClipCard
+            key={clip._id}
+            clip={clip}
+            onDownload={() => onDownload(clip)}
+            onPublish={(platform) => onPublish(clip, platform)}
+            onEdit={onEdit ? () => onEdit(clip) : undefined}
+            onDelete={onDelete ? () => onDelete(clip) : undefined}
+            onZoom={() => setSelectedClip(clip)}
+          />
+        ))}
+      </div>
+
+      {/* Zoom Modal */}
+      <AnimatePresence>
+        {selectedClip && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg"
+            onClick={() => setSelectedClip(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative h-[90vh] aspect-[9/16] bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedClip(null)}
+                className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-primary transition-colors backdrop-blur-sm"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <video
+                controls
+                autoPlay
+                className="w-full h-full object-contain"
+                src={selectedClip.fileUrl}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
-function ClipCard({ clip, onDownload, onPublish, onEdit, onDelete }: { clip: Clip; onDownload: () => void; onPublish: (platform: string) => void; onEdit?: () => void; onDelete?: () => void }) {
+function ClipCard({ clip, onDownload, onPublish, onEdit, onDelete, onZoom }: { clip: Clip; onDownload: () => void; onPublish: (platform: string) => void; onEdit?: () => void; onDelete?: () => void; onZoom: () => void }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play();
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMuted(!isMuted);
+  };
 
   return (
     <motion.div
@@ -90,18 +151,42 @@ function ClipCard({ clip, onDownload, onPublish, onEdit, onDelete }: { clip: Cli
           )}
         </div>
         <video
+          ref={videoRef}
           src={clip.fileUrl}
           className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
           loop
-          muted
+          muted={isMuted}
           playsInline
-          autoPlay={isHovered}
         />
         
-        {/* Play overlay when not hovered */}
-        <div className={cn("absolute inset-0 flex items-center justify-center transition-opacity duration-300", isHovered ? "opacity-0" : "opacity-100")}>
+        {/* Play overlay when not hovered and not playing */}
+        <div className={cn("absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none", isHovered || isPlaying ? "opacity-0" : "opacity-100")}>
           <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center">
             <Play className="w-5 h-5 text-white ml-1" />
+          </div>
+        </div>
+
+        {/* Video Controls Overlay */}
+        <div className={cn("absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300 pointer-events-none", isHovered || isPlaying ? "opacity-100" : "opacity-0")}>
+          <div className="flex justify-center items-center gap-3 pointer-events-auto">
+            <button 
+              onClick={togglePlay}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 transition-all shadow-xl"
+            >
+              {isPlaying ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
+            </button>
+            <button 
+              onClick={toggleMute}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 transition-all shadow-xl"
+            >
+              {isMuted ? <VolumeX className="w-4 h-4 text-white" /> : <Volume2 className="w-4 h-4 text-white" />}
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); onZoom(); }}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 transition-all shadow-xl text-white"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
 

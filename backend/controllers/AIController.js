@@ -69,6 +69,73 @@ class AIController extends BaseController {
             return this.handleError(res, err);
         }
     }
+    async fetchTrends(req, res) {
+        try {
+            const { niche } = req.body;
+            if (!niche) {
+                return this.badRequest(res, "Niche is required");
+            }
+            const trends = await this.aiService.fetchTrends(niche);
+            return this.success(res, { trends });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    async analyzeCompetitor(req, res) {
+        try {
+            const { youtubeUrl } = req.body;
+            if (!youtubeUrl) return this.badRequest(res, "YouTube URL is required");
+            const analysis = await this.aiService.analyzeCompetitor(youtubeUrl);
+            return this.success(res, { analysis });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    async generateScript(req, res) {
+        try {
+            const { title, hook } = req.body;
+            if (!title || !hook) return this.badRequest(res, "Title and hook are required");
+            const script = await this.aiService.generateScript(title, hook);
+            return this.success(res, { script });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    async generateHashtags(req, res) {
+        try {
+            const { topic } = req.body;
+            if (!topic) return this.badRequest(res, "Topic is required");
+            const hashtags = await this.aiService.generateHashtags(topic);
+            return this.success(res, { hashtags });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    async findSponsors(req, res) {
+        try {
+            const { niche } = req.body;
+            if (!niche) return this.badRequest(res, "Niche is required");
+            const sponsors = await this.aiService.findSponsors(niche);
+            return this.success(res, { sponsors });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
+
+    async generateVoiceover(req, res) {
+        try {
+            const { text } = req.body;
+            if (!text) return this.badRequest(res, "Text is required");
+            const audioData = await this.aiService.generateVoiceover(text);
+            return this.success(res, { audioData });
+        } catch (err) {
+            return this.handleError(res, err);
+        }
+    }
 }
 
 module.exports = new AIController(AIService);

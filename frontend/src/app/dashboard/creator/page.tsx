@@ -686,13 +686,14 @@ export default function CreatorDashboard() {
           video_rejected: "❌ Video rejected",
           video_accepted: "👍 Editor accepted your raw video!",
           video_updated: "🔄 Video status updated",
+          video_deleted: "🗑️ Video deleted",
           youtube_uploaded: "🎉 Video is live on YouTube!",
         };
         toast.info(messages[action] || "Video list updated");
         fetchVideos();
       };
 
-      const events = ["video_uploaded", "video_updated", "video_approved", "video_rejected", "video_accepted"];
+      const events = ["video_uploaded", "video_updated", "video_deleted", "video_approved", "video_rejected", "video_accepted"];
       events.forEach(evt => socket.on(evt, handleVideoEvent));
 
       const handleVideoProgress = (data: any) => {
@@ -850,14 +851,6 @@ export default function CreatorDashboard() {
         {/* Logo Area */}
         <div className={cn("p-5 border-b border-border flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between")}>
           <div className="min-w-max"><MWareXLogo showText={!isSidebarCollapsed} size="md" /></div>
-          {!isSidebarCollapsed && (
-            <button 
-              onClick={() => setIsSidebarCollapsed(true)}
-              className="hidden lg:flex p-1.5 rounded-lg hover:bg-secondary text-muted-foreground transition-colors"
-            >
-              <PanelLeftClose className="w-5 h-5" />
-            </button>
-          )}
         </div>
 
         {/* Workspace Switcher */}
@@ -910,10 +903,10 @@ export default function CreatorDashboard() {
           <button 
             onClick={() => setActiveView("dashboard")}
             title={isSidebarCollapsed ? "Dashboard" : undefined}
-            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-colors cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "dashboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-all overflow-hidden", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "dashboard" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
           >
            <LayoutDashboard className="w-4 h-4 shrink-0" />
-           {!isSidebarCollapsed && <span>Dashboard</span>}
+           <span className={cn("whitespace-nowrap transition-opacity duration-200", isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")}>Dashboard</span>
           </button>
           
           <button
@@ -922,37 +915,37 @@ export default function CreatorDashboard() {
               setIsSettingsOpen(true);
             }}
             title={isSidebarCollapsed ? "AI Brain Settings" : undefined}
-            className={cn("w-full flex items-center py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3")}
+            className={cn("w-full flex items-center py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-all overflow-hidden text-sm", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3")}
           >
             <Bot className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>AI Brain Settings</span>}
+            <span className={cn("whitespace-nowrap transition-opacity duration-200", isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")}>AI Brain Settings</span>
           </button>
 
           <button
             onClick={() => { setIsIntegrationsOpen(true); setIsSidebarOpen(false); }}
             title={isSidebarCollapsed ? "Integrations" : undefined}
-            className={cn("w-full flex items-center py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3")}
+            className={cn("w-full flex items-center py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-all overflow-hidden text-sm", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3")}
           >
             <Link2 className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>Integrations</span>}
+            <span className={cn("whitespace-nowrap transition-opacity duration-200", isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")}>Integrations</span>
           </button>
 
           <button
             onClick={() => { setActiveView("pipeline"); setIsSidebarOpen(false); }}
-            title={isSidebarCollapsed ? "AI Pipeline" : undefined}
-            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-colors", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "pipeline" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+            title={isSidebarCollapsed ? "AI Strategy" : undefined}
+            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-all overflow-hidden", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "pipeline" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
           >
             <Cpu className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>AI Pipeline</span>}
+            <span className={cn("whitespace-nowrap transition-opacity duration-200", isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")}>AI Strategy</span>
           </button>
 
           <button
             onClick={() => { setActiveView("future"); setIsSidebarOpen(false); }}
             title={isSidebarCollapsed ? "Future Features" : undefined}
-            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-colors", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "future" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-all overflow-hidden", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "future" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
           >
             <Sparkles className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>Future Features</span>}
+            <span className={cn("whitespace-nowrap transition-opacity duration-200", isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")}>Future Features</span>
           </button>
 
           <div className="my-4 border-t border-border" />
@@ -963,10 +956,10 @@ export default function CreatorDashboard() {
               setIsSettingsOpen(true);
             }}
             title={isSidebarCollapsed ? "Settings" : undefined}
-            className={cn("w-full flex items-center py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors text-sm cursor-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMiAyTDEwIDI2TDE0IDE2TDI2IDEyTDIgMloiIGZpbGw9IiM2MzY2ZjEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+'),_pointer]", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3")}
+            className={cn("w-full flex items-center py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-all overflow-hidden text-sm", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3")}
           >
             <Settings className="w-4 h-4 shrink-0" />
-            {!isSidebarCollapsed && <span>Settings</span>}
+            <span className={cn("whitespace-nowrap transition-opacity duration-200", isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")}>Settings</span>
           </button>
         </nav>
 
@@ -1027,19 +1020,17 @@ export default function CreatorDashboard() {
         >
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-secondary text-muted-foreground"
+              onClick={() => {
+                if (window.innerWidth >= 1024) {
+                  setIsSidebarCollapsed(!isSidebarCollapsed);
+                } else {
+                  setIsSidebarOpen(!isSidebarOpen);
+                }
+              }}
+              className="p-2 -ml-2 rounded-lg hover:bg-secondary text-muted-foreground transition-colors flex items-center justify-center cursor-pointer"
             >
               <Menu className="w-5 h-5" />
             </button>
-            {isSidebarCollapsed && (
-              <button
-                onClick={() => setIsSidebarCollapsed(false)}
-                className="hidden lg:flex p-2 -ml-2 rounded-lg hover:bg-secondary text-muted-foreground transition-colors"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-            )}
             <div>
               <h1 className="text-lg font-semibold">Dashboard</h1>
               <p className="text-xs text-muted-foreground hidden sm:block">Welcome back, {userData?.name}</p>

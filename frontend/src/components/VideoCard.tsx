@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "sonner";
 import {
   Play,
   Clock,
@@ -204,6 +205,11 @@ export default function VideoCard({
 
   const handlePlayClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (video.status === "ai_processing") {
+      toast.info("Still Processing", { description: "The AI is currently working on this clip. Please wait until it's finished." });
+      return;
+    }
+    
     setIsPlayingLoading(true);
     try {
       if (currentVideoPath?.includes("amazonaws.com")) {
@@ -613,7 +619,7 @@ export default function VideoCard({
                 <X className="w-5 h-5" />
               </button>
 
-              {!videoError ? (
+              {!videoError && !videoUrl.includes("youtube.com") && !videoUrl.includes("youtu.be") ? (
                 <video
                   controls
                   autoPlay
@@ -626,6 +632,19 @@ export default function VideoCard({
                 >
                   Your browser does not support the video tag.
                 </video>
+              ) : videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be") ? (
+                <div className="w-full aspect-video flex flex-col items-center justify-center bg-zinc-900 text-center p-6">
+                  <div className="w-16 h-16 rounded-full bg-red-600/10 flex items-center justify-center mb-4">
+                    <Youtube className="w-8 h-8 text-red-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Importing from YouTube</h3>
+                  <p className="text-zinc-400 text-sm max-w-md">
+                    Our AI is currently downloading and analyzing the source video from YouTube.
+                  </p>
+                  <p className="text-zinc-500 text-xs mt-4">
+                    <span className="font-mono bg-black/50 px-2 py-1 rounded text-zinc-300">{videoUrl}</span>
+                  </p>
+                </div>
               ) : (
                 <div className="w-full aspect-video flex flex-col items-center justify-center bg-zinc-900 text-center p-6">
                   <AlertTriangle className="w-12 h-12 text-yellow-500 mb-4" />

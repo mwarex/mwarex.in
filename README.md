@@ -1,8 +1,8 @@
 <div align="center">
 
-  <!-- Simple Static-Like Animation (Just MwareX) -->
+<div align="center">
   <a href="https://mwarex.in">
-    <img src="https://readme-typing-svg.herokuapp.com?font=Orbitron&weight=900&size=60&pause=1000&color=FFFFFF&background=00000000&center=true&vCenter=true&width=600&lines=MwareX" alt="MwareX" />
+    <img src="./githubanner.png" alt="MwareX AI Content Operations Platform" width="100%" style="border-radius: 12px; margin-bottom: 20px;" />
   </a>
 
   <p align="center">
@@ -50,10 +50,20 @@ Our mission is to open-source the ultimate content operations platform for creat
 
 We leverage a robust, modern ecosystem designed for scale, speed, and real-time processing.
 
-| **Frontend Core** | **Backend Engine** | **Cloud & AI** |
-|:---:|:---:|:---:|
-| <img height="40" src="https://skillicons.dev/icons?i=nextjs,ts,tailwind,react" /> | <img height="40" src="https://skillicons.dev/icons?i=nodejs,express,mongodb,js" /> | <img height="40" src="https://skillicons.dev/icons?i=gcp,python,pytorch,aws" /> |
-| Next.js 16 (App Router)<br>TypeScript<br>Tailwind CSS<br>Framer Motion | Node.js<br>Express<br>MongoDB Atlas<br>Socket.io | Python<br>Gemini AI<br>FFMPEG<br>AWS S3 / Cloudinary |
+### **🎨 Frontend Core**
+- **Framework:** Next.js 16 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS & Framer Motion
+
+### **⚙️ Backend Engine**
+- **Runtime:** Node.js & Express
+- **Database:** MongoDB Atlas
+- **Real-time Communication:** Socket.io
+
+### **🧠 AI & Cloud Infrastructure**
+- **Processing Engine:** Python & FFMPEG
+- **AI Models:** Groq Llama 3.3, Google Gemini Flash, OpenAI Whisper
+- **Cloud Storage:** AWS S3 & Cloudinary
 
 <br>
 
