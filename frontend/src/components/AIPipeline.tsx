@@ -52,7 +52,7 @@ export default function AIPipeline() {
     setLoadingTrends(true); setTrends(null); setScripts({});
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/ai/trends", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/ai/trends`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token && { "token": token }) },
         body: JSON.stringify({ niche }),
@@ -72,7 +72,7 @@ export default function AIPipeline() {
     setGeneratingScriptIndex(idx);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/ai/script", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/ai/script`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token && { "token": token }) },
         body: JSON.stringify({ title, hook }),
@@ -92,7 +92,7 @@ export default function AIPipeline() {
     setLoadingCompetitor(true); setCompetitorData(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/ai/competitor", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/ai/competitor`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token && { "token": token }) },
         body: JSON.stringify({ youtubeUrl: competitorUrl }),
@@ -114,7 +114,7 @@ export default function AIPipeline() {
     setLoadingHashtags(true); setHashtags(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/ai/hashtags", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/ai/hashtags`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token && { "token": token }) },
         body: JSON.stringify({ topic: hashtagTopic }),
@@ -136,7 +136,7 @@ export default function AIPipeline() {
     setLoadingSponsors(true); setSponsors(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/ai/sponsors", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/ai/sponsors`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token && { "token": token }) },
         body: JSON.stringify({ niche: sponsorNiche }),
@@ -158,7 +158,7 @@ export default function AIPipeline() {
     setLoadingVoiceover(true); setVoiceoverAudio(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/v1/ai/voiceover", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/ai/voiceover`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token && { "token": token }) },
         body: JSON.stringify({ text: voiceoverText }),
