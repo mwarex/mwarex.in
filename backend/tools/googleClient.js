@@ -11,15 +11,13 @@ const getOAuth2Client = async (userId) => {
 
   const user = await userModel.findById(userId);
 
-  if (user && user.youtubeTokens) {
+  if (user && user.youtubeTokens && user.youtubeTokens.refreshToken) {
     oauth2Client.setCredentials({
       access_token: user.youtubeTokens.accessToken,
       refresh_token: user.youtubeTokens.refreshToken,
     });
-  } else if (process.env.YOUTUBE_REFRESH_TOKEN) {
-    oauth2Client.setCredentials({
-      refresh_token: process.env.YOUTUBE_REFRESH_TOKEN,
-    });
+  } else {
+    throw new Error("No YouTube refresh token found for this user. Please reconnect your YouTube account.");
   }
 
   oauth2Client.on("tokens", async (tokens) => {

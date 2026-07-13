@@ -42,7 +42,8 @@ class AuthService {
 
         const token = jwt.sign(
             { id: user._id },
-            process.env.JWT_SECRET_USER
+            process.env.JWT_SECRET_USER,
+            { expiresIn: "7d" }
         );
 
         return { token, email: user.email, name: user.name, id: user._id.toString(), role: user.role };
@@ -116,7 +117,7 @@ class AuthService {
     }
 
     generateToken(userId) {
-        return jwt.sign({ id: userId }, process.env.JWT_SECRET_USER);
+        return jwt.sign({ id: userId }, process.env.JWT_SECRET_USER, { expiresIn: "7d" });
     }
 
     generateAdminToken(adminId) {

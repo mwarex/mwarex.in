@@ -9,9 +9,22 @@
     <img src="https://img.shields.io/badge/v1.0.0-Beta-blueviolet?style=for-the-badge&labelColor=black" />
     <img src="https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
     <img src="https://img.shields.io/badge/Status-Production-success?style=for-the-badge&labelColor=black" />
+    <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-00E676?style=for-the-badge&labelColor=black" /></a>
   </p>
 
   <h3 align="center">The Secure Operating System for Modern YouTube Teams</h3>
+  <p align="center"><b>An Open-Source AI Content Operations Platform</b></p>
+  
+  <br />
+
+  <a href="#-getting-started"><strong>Explore the Docs »</strong></a>
+  <br />
+  <br />
+  <a href="https://mwarex.in">View Live Demo</a>
+  ·
+  <a href="https://github.com/samay-hash/MwareX/issues">Report Bug</a>
+  ·
+  <a href="https://github.com/samay-hash/MwareX/issues">Request Feature</a>
 
 </div>
 
@@ -19,122 +32,136 @@
 
 <br>
 
-<div align="center">
-  
-  <img src="https://img.shields.io/badge/❌_The_Old_Way_(Broken_&_Insecure)-000000?style=for-the-badge&labelColor=FF0000" height="35" />
+## 🌟 About The Project
 
-</div>
+Most YouTube creators don’t have a secure or efficient way to work with editors. This forces them to waste hours on uploads, downloads — and in some cases, even share their Google account passwords just to get videos published.
 
-> *"Most YouTube creators don’t have a secure or efficient way to work with editors. This forces them to waste hours on uploads, downloads — and in some cases, even share their Google account passwords just to get videos published."*
-
-**The Painful Reality:**
-1.  **Hours Wasted**: Editor uploads to Drive ➔ Creator Downloads (5GB+) ➔ Creator Re-uploads to YouTube.
-2.  **Security Risks**: Sharing Google Password with editors just so they can upload? **Never again.**
-3.  **Chaos**: "Final_v3_REAL_FINAL.mp4" lost in WhatsApp chats.
-
-<br>
-
-<div align="center">
-
-  <img src="https://img.shields.io/badge/✅_The_MwareX_Way_(Streamlined)-000000?style=for-the-badge&labelColor=00E676" height="35" />
-
-</div>
-
-**MwareX** creates a secure bridge between your editing team and your YouTube channel.
-- **Editors** upload directly to your secure MwareX cloud. ☁️
-- **You (The Creator)** get a push notification to review the video. 📲
+**MWareX** creates a secure bridge between your editing team and your YouTube channel.
+- **Editors** upload directly to your secure MWareX cloud. ☁️
+- **Creators** get a push notification to review the video. 📲
 - **One Click Approval**: The video is instantly pushed to YouTube via secure OAuth. 🚀
 - **Zero Privacy Compromise**: Editors never see your YouTube credentials. 🛡️
 
----
+Our mission is to open-source the ultimate content operations platform for creators globally.
 
 <br>
 
-<div align="center">
+## 🛠️ Built With
 
-  <img src="https://img.shields.io/badge/🛠️_The_Tech_Ecosystem-000000?style=for-the-badge&labelColor=2196F3" height="35" />
-  
-  <br><br>
+We leverage a robust, modern ecosystem designed for scale, speed, and real-time processing.
 
-  | **Frontend Core** | **Backend Engine** | **Cloud & AI** |
-  |:---:|:---:|:---:|
-  | <img height="50" src="https://skillicons.dev/icons?i=nextjs,ts,tailwind,framer" /> | <img height="50" src="https://skillicons.dev/icons?i=nodejs,express,mongodb,postman" /> | <img height="50" src="https://skillicons.dev/icons?i=gcp,cloudinary,python,pytorch" /> |
-  | **Next.js 16 • TypeScript • Framer Motion** | **Node.js • Express • MongoDB Atlas** | **Gemini AI • FFMPEG • AWS S3** |
-
-</div>
+| **Frontend Core** | **Backend Engine** | **Cloud & AI** |
+|:---:|:---:|:---:|
+| <img height="40" src="https://skillicons.dev/icons?i=nextjs,ts,tailwind,react" /> | <img height="40" src="https://skillicons.dev/icons?i=nodejs,express,mongodb,js" /> | <img height="40" src="https://skillicons.dev/icons?i=gcp,python,pytorch,aws" /> |
+| Next.js 16 (App Router)<br>TypeScript<br>Tailwind CSS<br>Framer Motion | Node.js<br>Express<br>MongoDB Atlas<br>Socket.io | Python<br>Gemini AI<br>FFMPEG<br>AWS S3 / Cloudinary |
 
 <br>
 
-<div align="center">
+## 🚀 Getting Started
 
-  <img src="https://img.shields.io/badge/🏗️_Architecture_Highlights-000000?style=for-the-badge&labelColor=FF9800" height="35" />
+To get a local copy up and running, follow these simple steps.
 
-</div>
+### Prerequisites
 
-- **Real-time Engine**: Built with `Socket.io` for live status updates on video processing.
-- **Secure Auth**: Implemented secure `HTTP-Only` cookies with `JWT` and Google OAuth 2.0.
-- **Cloud Native**: Zero local storage dependency; all assets are processed in the cloud (Cloudinary/S3).
-- **Type Safety**: End-to-end type safety using `TypeScript` and `Zod` schemas.
+You need the following installed on your machine:
+* [Node.js](https://nodejs.org/) (v18+)
+* [Python](https://www.python.org/) (v3.9+)
+* [MongoDB](https://www.mongodb.com/) (Local or Atlas URI)
+* [FFMPEG](https://ffmpeg.org/download.html) (Installed and added to your system path)
 
----
+### Installation & Setup
 
-## 📂 Codebase Navigation
+MWareX is a monorepo consisting of three microservices. You will need to start all three to run the full application.
 
-A quick guide for developers exploring the source code:
+**1. Clone the repo**
+```bash
+git clone https://github.com/samay-hash/MwareX.git
+cd MwareX
+```
+
+**2. Start the Backend API**
+```bash
+cd backend
+npm install
+# Create a .env file based on the provided .env.example
+npm run dev
+```
+*The Node.js server will run on port 8000.*
+
+**3. Start the AI Engine**
+```bash
+cd ../ai_engine
+python3 -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+pip install -r requirements.txt
+# Create a .env file with your Gemini/Cloudinary keys
+python app.py
+```
+*The Python AI server will run on port 5001.*
+
+**4. Start the Frontend Application**
+```bash
+cd ../frontend
+npm install
+# Create a .env.local file with your Next.js config
+npm run dev
+```
+*The Next.js app will run on port 3000. Open [http://localhost:3000](http://localhost:3000) to view it in your browser.*
+
+<br>
+
+## 📂 Project Structure
 
 ```bash
 MwareX/
-├── 📱 frontend/              # Next.js 16 (App Router)
-│   ├── src/app/              # Pages & Layouts
-│   ├── src/components/       # Reusable UI (Radix + Lucide)
-│   ├── src/lib/              # API Clients & Auth Utilities
-│   └── public/               # Static Assets
+├── 📱 frontend/              # Next.js 16 (App Router) User Interface
+│   ├── src/app/              # Pages & Layouts (Dashboard, Video Editor)
+│   ├── src/components/       # Reusable UI (Radix + Lucide + Framer)
+│   └── src/lib/              # API Clients & Auth Utilities
 │
 ├── ⚙️ backend/               # Node.js Microservice
 │   ├── models/               # MongoDB Schemas (Mongoose)
-│   ├── routes/               # REST API Endpoints
-│   ├── services/             # Core Logic (YouTube Uploads, Email)
-│   └── middlewares/          # Security Layers (CORS, Auth)
+│   ├── routes/               # REST API Endpoints (Auth, Video, S3)
+│   └── services/             # Core Logic (YouTube Uploads, Email)
 │
-├── 🤖 ai_engine/             # Python Multimodal AI Microservice
-│   ├── app.py                # Gemini AI & FFMPEG logic
-│   ├── requirements.txt      # Python dependencies
-│   └── Dockerfile            # Container build config
-│
-└── 📄 README.md             # You are here
+└── 🤖 ai_engine/             # Python Multimodal AI Microservice
+    ├── app.py                # Flask API
+    ├── ai_analysis.py        # Gemini AI Prompting
+    └── clip_extractor.py     # FFMPEG Video Processing
 ```
 
----
+<br>
+
+## 🤝 Contributing
+
+We are thrilled that you'd like to contribute to MWareX! Whether it's fixing a bug, improving documentation, or adding a new feature, your help is welcome.
+
+Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct, development workflow, and the process for submitting Pull Requests.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'feat: Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 <br>
 
-<div align="center">
+## 🛡️ Security & Code of Conduct
 
-  <img src="https://img.shields.io/badge/💰_Contribute_&_Win_Bounties-000000?style=for-the-badge&labelColor=FFD700" height="35" />
-
-  <br><br>
-  
-  <h3>🚀 calling all developers!</h3>
-  
-  <p>We are actively looking for contributors to help build the future of creator tools.</p>
-  <p><strong>Top contributors will be eligible for exclusive bounties, MwareX pro access, and cash rewards!</strong></p>
-
-  <a href="https://github.com/samay-hash/MwareX/issues">
-    <img src="https://img.shields.io/badge/Browse_Issues-2ea44f?style=for-the-badge&logo=github&logoColor=white" />
-  </a>
-  <a href="https://github.com/samay-hash/MwareX/pulls">
-    <img src="https://img.shields.io/badge/Submit_PR-000000?style=for-the-badge&logo=github&logoColor=white" />
-  </a>
-
-</div>
+- **Security**: If you discover any security related issues, please refer to our [Security Policy](SECURITY.md) for reporting instructions.
+- **Code of Conduct**: Please review and abide by our [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a welcoming environment for all.
 
 <br>
+
+## 📄 License
+
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
 
 ---
 
 <div align="center">
 
-  <h3>🔗 Connect With Me</h3>
+  <h3>🔗 Connect With The Founder</h3>
   <p>I build tools that solve real problems.</p>
 
   <a href="https://github.com/samay-hash">
@@ -145,6 +172,6 @@ MwareX/
   </a>
 
   <br><br>
-  <p><i>Licensed under MIT. Made with 💙 by Samay </i></p>
+  <p><i>Made with 💙 by Samay</i></p>
 
 </div>

@@ -9,6 +9,7 @@ const videoSchema = new mongoose.Schema({
   creatorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    index: true,
   },
 
   editorId: {
@@ -19,12 +20,14 @@ const videoSchema = new mongoose.Schema({
   roomId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Room",
+    index: true,
   },
 
   status: {
     type: String,
     enum: ["pending", "approved", "rejected", "uploaded", "processing", "upload_failed", "raw_uploaded", "raw_rejected", "editing_in_progress", "ai_processing"],
     default: "pending",
+    index: true,
   },
   rejectionReason: String,
 
@@ -54,6 +57,7 @@ const videoSchema = new mongoose.Schema({
     sepia: { type: Number, default: 0 },
     trimStart: { type: Number, default: 0 },
     trimEnd: { type: Number, default: 0 },
+    nleState: { type: mongoose.Schema.Types.Mixed }, // Stores complex NLE timeline/clip config
   },
 
   aiProgress: {

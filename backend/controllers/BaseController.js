@@ -17,6 +17,10 @@ class BaseController {
     badRequest(res, message) {
         return res.status(400).json({ message });
     }
+
+    notFound(res, message = "Not found") {
+        return res.status(404).json({ message });
+    }
 }
 
 module.exports = BaseController;

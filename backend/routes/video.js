@@ -2,6 +2,7 @@ const router = require("express").Router();
 const multer = require("multer");
 const VideoController = require("../controllers/VideoController");
 const userAuth = require("../middlewares/userMiddleware");
+const aiAuth = require("../middlewares/aiAuthMiddleware");
 
 // ─────────────────────────────────────────────────────────────
 // S3 Direct-Upload Flow (NEW — preferred for large files)
@@ -39,9 +40,9 @@ router.get("/pending", userAuth, (req, res) => VideoController.getPending(req, r
 router.get("/youtube-status", userAuth, (req, res) => VideoController.youtubeStatus(req, res));
 router.post("/store-youtube-tokens", userAuth, (req, res) => VideoController.storeYoutubeTokens(req, res));
 router.post("/:id/approve", userAuth, (req, res) => VideoController.approve(req, res));
-router.post("/:id/ai-callback", (req, res) => VideoController.aiCallback(req, res));
-router.post("/:id/clips-callback", (req, res) => VideoController.clipsCallback(req, res));
-router.post("/:id/ai-progress", (req, res) => VideoController.aiProgress(req, res));
+router.post("/:id/ai-callback", aiAuth, (req, res) => VideoController.aiCallback(req, res));
+router.post("/:id/clips-callback", aiAuth, (req, res) => VideoController.clipsCallback(req, res));
+router.post("/:id/ai-progress", aiAuth, (req, res) => VideoController.aiProgress(req, res));
 router.post("/:id/reject", userAuth, (req, res) => VideoController.reject(req, res));
 router.post("/:id/raw-review", userAuth, (req, res) => VideoController.rawReview(req, res));
 router.post("/:id/comments", userAuth, (req, res) => VideoController.addComment(req, res));

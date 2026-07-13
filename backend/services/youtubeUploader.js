@@ -31,7 +31,7 @@ async function uploadToYoutube(video, userId) {
     method: "get",
     url: streamUrl,
     responseType: "stream",
-    timeout: 30000,
+    timeout: 0, // No timeout for large video downloads
   });
 
   const contentLength = parseInt(streamReq.headers["content-length"] || "0", 10);

@@ -2,6 +2,8 @@ const BaseController = require("./BaseController");
 const VideoService = require("../services/VideoService");
 const { enqueueYoutubeUpload } = require("../services/YouTubeQueue");
 const { getOAuth2Client } = require("../tools/googleClient");
+const videoModel = require("../models/video");
+const AIService = require("../services/AIService");
 
 class VideoController extends BaseController {
     constructor(videoService) {
@@ -140,64 +142,19 @@ class VideoController extends BaseController {
                     userId: req.userId,
                 });
                 
-                // ── MOCK AI PROCESSING (No real AI, just simulate) ──
+                // ── REAL AI PROCESSING ──
                 if (!editorId) {
-                    const VideoModel = require("../models/video");
+                    video.status = "ai_processing";
+                    await video.save();
                     
-                    // Run mock processing in background
-                    (async () => {
-                        try {
-                            video.status = "ai_processing";
-                            video.aiProgress = { percent: 0, message: "Starting AI analysis..." };
-                            await video.save();
-                            
-                            if (global.io && roomId) {
-                                global.io.to(`room_${roomId.toString()}`).emit("video_progress", {
-                                    videoId: video._id.toString(),
-                                    percent: 10,
-                                    message: "Analyzing video content..."
-                                });
-                            }
-
-                            // Simulate AI processing steps
-                            for (let i = 20; i <= 80; i += 20) {
-                                await new Promise(resolve => setTimeout(resolve, 1000));
-                                video.aiProgress = { 
-                                    percent: i, 
-                                    message: i < 50 ? "Detecting scenes and audio..." : "Generating edit suggestions..." 
-                                };
-                                await video.save();
-                                
-                                if (global.io && roomId) {
-                                    global.io.to(`room_${roomId.toString()}`).emit("video_progress", {
-                                        videoId: video._id.toString(),
-                                        percent: i,
-                                        message: video.aiProgress.message
-                                    });
-                                }
-                            }
-
-                            // Complete mock processing - use the original file as "edited"
-                            video.status = "pending";
-                            video.fileUrl = video.rawFileUrl;
-                            video.aiProgress = { percent: 100, message: "AI Processing Complete!" };
-                            await video.save();
-
-                            if (global.io && roomId) {
-                                global.io.to(`room_${roomId.toString()}`).emit("video_progress", {
-                                    videoId: video._id.toString(),
-                                    percent: 100,
-                                    message: "AI Processing Complete!"
-                                });
-                                global.io.to(`room_${roomId.toString()}`).emit("video_updated", {
-                                    videoId: video._id,
-                                    status: "pending"
-                                });
-                            }
-                        } catch (err) {
-                            console.error("Mock AI processing error:", err.message);
-                        }
-                    })();
+                    // Trigger real AI in background
+                    AIService.analyzeVideo(
+                        video.rawFileUrl || video.fileUrl,
+                        video.title,
+                        video.description,
+                        video._id,
+                        global.io
+                    ).catch(err => console.error("[VideoController] AI Trigger failed:", err.message));
                 }
                 
             } else {
@@ -223,8 +180,7 @@ class VideoController extends BaseController {
     async aiProgress(req, res) {
         try {
             const { percent, message } = req.body;
-            const VideoModel = require("../models/video");
-            const video = await VideoModel.findById(req.params.id);
+            const video = await videoModel.findById(req.params.id);
             
             if (!video) return this.notFound(res, "Video not found");
             
@@ -247,8 +203,7 @@ class VideoController extends BaseController {
         try {
             const { status, editedFileUrl, portraitFileUrl, captionFileUrl, transcript, clips, message } = req.body;
             // Get raw context access from mongoose Model
-            const VideoModel = require("../models/video");
-            const video = await VideoModel.findById(req.params.id);
+            const video = await videoModel.findById(req.params.id);
             
             if (!video) return this.notFound(res, "Video not found");
             
@@ -286,13 +241,11 @@ class VideoController extends BaseController {
     async clipsCallback(req, res) {
         try {
             const { status, clips, transcript, message } = req.body;
-            const VideoModel = require("../models/video");
-            
             // Note: req.params.id might be the parent video ID, or a dummy if it was a direct YouTube URL
             // If parent video exists, we update its progress
             let parentVideo = null;
             if (req.params.id && req.params.id !== 'undefined' && req.params.id !== 'null') {
-                parentVideo = await VideoModel.findById(req.params.id);
+                parentVideo = await videoModel.findById(req.params.id);
             }
             
             if (status === "failed") {
@@ -312,7 +265,7 @@ class VideoController extends BaseController {
                 
                 const clipDocs = [];
                 for (const clip of clips) {
-                    const newClip = new VideoModel({
+                    const newClip = new videoModel({
                         title: clip.title || "Extracted Clip",
                         fileUrl: clip.fileUrl,
                         portraitFileUrl: clip.portraitFileUrl || "",
@@ -536,13 +489,11 @@ class VideoController extends BaseController {
             
             let targetVideoId = videoId;
             if (!youtubeUrl && videoId) {
-                const VideoModel = require("../models/video");
-                const video = await VideoModel.findById(videoId);
+                const video = await videoModel.findById(videoId);
                 if (video) fileUrl = video.rawFileUrl || video.fileUrl;
             } else if (youtubeUrl && !videoId) {
                 // Create a placeholder video so the frontend can track progress
-                const VideoModel = require("../models/video");
-                const newParent = new VideoModel({
+                const newParent = new videoModel({
                     title: "YouTube Import",
                     description: youtubeUrl,
                     status: "ai_processing",

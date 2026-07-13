@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 dotenv.config();
 const cors = require("cors");
+const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const axios = require("axios");
 const { connectDB } = require("./db");
@@ -16,7 +17,6 @@ const paymentRoutes = require("./routes/payment");
 const cryptoRoutes = require("./routes/crypto");
 const { verifyConnection } = require("./services/emailService");
 
-const { google } = require("googleapis");
 const googleAuthRoutes = require("./routes/googleAuth");
 
 const http = require("http");
@@ -48,6 +48,7 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+// global.io is required by BullMQ workers (youtubeUploader.js) which run outside request context
 global.io = io;
 
 io.on("connection", (socket) => {
@@ -72,6 +73,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(
   cors({
     origin: allowedOrigins,
@@ -79,7 +81,8 @@ app.use(
   })
 );
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/uploads", express.static("uploads"));
 
 connectDB();
@@ -143,38 +146,8 @@ const keepServerAlive = () => {
   }, PING_INTERVAL);
 };
 
-app.get("/oauth2callback", async (req, res) => {
-  try {
-    const code = req.query.code;
-
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT
-    );
-
-    const { tokens } = await oauth2Client.getToken(code);
-
-    const origin = req.query.state;
-    const frontendUrl = origin || process.env.FRONTEND_URL || "https://www.mwarex.in";
-
-    const params = new URLSearchParams();
-
-    if (tokens.access_token) params.append("access_token", tokens.access_token);
-    if (tokens.refresh_token) params.append("refresh_token", tokens.refresh_token);
-    if (tokens.scope) params.append("scope", tokens.scope);
-
-    return res.redirect(
-      `${frontendUrl.replace(/\/$/, "")}/oauth2callback?${params.toString()}`
-    );
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      message: "Token exchange failed",
-      error: err.message,
-    });
-  }
-});
+// OAuth callback is handled exclusively by /auth/google/callback in googleAuth.js
+// Removed duplicate /oauth2callback that exposed tokens in URL params
 
 const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => {

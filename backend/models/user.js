@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  email: String,
+  email: { type: String, unique: true, sparse: true, index: true },
   password: String,
   resetPasswordOtp: String,
   resetPasswordOtpExpiry: Date,
@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: false,
+    index: true,
   },
   role: {
     type: String,

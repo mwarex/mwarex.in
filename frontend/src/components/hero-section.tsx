@@ -46,9 +46,9 @@ export function HeroSection() {
 
             {/* ══ Navigation Bar ══ */}
             <motion.header
-                initial={{ opacity: 0, y: -12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
+                initial={{ opacity: 0, y: -12, filter: "blur(10px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ duration: 1, ease: "easeOut" }}
                 className="relative z-30 w-full flex items-center justify-between px-8 md:px-14 py-6"
             >
                 {/* Left nav links */}
@@ -130,9 +130,9 @@ export function HeroSection() {
                 <div className="flex flex-col gap-1 max-w-4xl mb-6">
                     {/* H1: Bright white */}
                     <motion.h1
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.9, delay: 0.3, ease: "easeOut" }}
+                        initial={{ opacity: 0, y: 30, filter: "blur(16px)" }}
+                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        transition={{ duration: 1.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
                         className="text-[2rem] md:text-[2.4rem] lg:text-[2.8rem] font-medium text-white leading-[1.1] tracking-tight mb-0 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] lg:whitespace-nowrap"
                         style={{ fontFamily: 'var(--font-geist-sans), Inter, system-ui, sans-serif' }}
                     >
@@ -141,9 +141,9 @@ export function HeroSection() {
 
                     {/* Sub-headline: Shady grey */}
                     <motion.h2
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.9, delay: 0.45, ease: "easeOut" }}
+                        initial={{ opacity: 0, y: 30, filter: "blur(16px)" }}
+                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        transition={{ duration: 1.8, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
                         className="text-[2rem] md:text-[2.4rem] lg:text-[2.8rem] font-normal text-white/50 leading-[1.1] tracking-tight mt-0 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] lg:whitespace-nowrap"
                         style={{ fontFamily: 'var(--font-geist-sans), Inter, system-ui, sans-serif' }}
                     >
@@ -153,9 +153,9 @@ export function HeroSection() {
 
                 {/* ── Horizontal Divider Line ── */}
                 <motion.div 
-                    initial={{ opacity: 0, scaleX: 0 }}
-                    animate={{ opacity: 1, scaleX: 1 }}
-                    transition={{ duration: 1, delay: 0.5, ease: "easeInOut" }}
+                    initial={{ opacity: 0, scaleX: 0, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, scaleX: 1, filter: "blur(0px)" }}
+                    transition={{ duration: 1.2, delay: 0.5, ease: "easeInOut" }}
                     className="w-full h-px bg-white/10 origin-left mb-8"
                 />
 
@@ -165,9 +165,9 @@ export function HeroSection() {
                     {/* Left: Small caps label and CTA */}
                     <div className="flex flex-col gap-6 max-w-sm">
                         <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 1.2, delay: 0.6 }}
+                            initial={{ opacity: 0, filter: "blur(10px)" }}
+                            animate={{ opacity: 1, filter: "blur(0px)" }}
+                            transition={{ duration: 1.2, delay: 0.7, ease: "easeOut" }}
                             className="text-[8px] md:text-[9px] font-medium tracking-[0.25em] uppercase text-white/40 font-sans"
                         >
                             AUTOMATE YOUR CONTENT. AMPLIFY YOUR REACH
@@ -175,9 +175,9 @@ export function HeroSection() {
                         
                         {/* CTA row (retained) */}
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.8, delay: 0.8 }}
+                            initial={{ opacity: 0, y: 15, filter: "blur(12px)" }}
+                            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                            transition={{ duration: 1, delay: 0.85, ease: [0.16, 1, 0.3, 1] }}
                             className="flex items-center gap-6"
                         >
                             <Link href="/auth/signup">
@@ -194,9 +194,9 @@ export function HeroSection() {
 
                     {/* Right: Description paragraphs */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, delay: 0.7 }}
+                        initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
+                        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                        transition={{ duration: 1.2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         className="hidden lg:flex flex-col gap-5 max-w-[360px]"
                     >
                         <p className="text-[12px] text-white/50 leading-[1.8] tracking-[0.01em] font-light">

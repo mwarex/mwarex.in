@@ -47,10 +47,6 @@ class AIService {
             };
         }
     }
-
-    /**
-     * Generate title suggestions using Groq Llama
-     */
     async generateTitles(keywords) {
         try {
             const response = await axios.post(

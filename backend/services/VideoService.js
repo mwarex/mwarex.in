@@ -1,6 +1,7 @@
 const VideoRepository = require("../repositories/VideoRepository");
 const RoomRepository = require("../repositories/RoomRepository");
 const UserRepository = require("../repositories/UserRepository");
+const AIService = require("./AIService");
 
 class VideoService {
     constructor(videoRepository, roomRepository, userRepository) {
@@ -256,12 +257,6 @@ class VideoService {
         if (!updatedVideo.editorId) {
             setTimeout(async () => {
                 try {
-                    const { GoogleGenerativeAI } = require("@google/generative-ai");
-                    if (!process.env.GEMINI_API_KEY) return;
-                    
-                    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
                     const chatHistory = updatedVideo.comments.map(c => `${c.isAI ? 'AI Editor' : 'Creator'}: ${c.text}`).join('\n');
                     const prompt = `You are an expert AI Video Editor assisting a Creator on the MwareX platform.
 The creator is currently reviewing your recent edit of their video.
@@ -271,8 +266,7 @@ ${chatHistory}
 Respond to exactly what the creator just asked in a helpful, concise, professional and enthusiastic tone. 
 Acknowledge edits they want you to make differently (if any), and assure them you'll remember these details when they hit the "Reject & Re-edit" button. Reply cleanly without markdown codes.`;
 
-                    const result = await model.generateContent(prompt);
-                    const aiReply = result.response.text();
+                    const aiReply = await AIService.chat([{ role: "user", text: prompt }]);
 
                     const freshVideo = await this.videoRepository.addComment(videoId, null, aiReply, true);
                     const aiComment = freshVideo.comments[freshVideo.comments.length - 1];
