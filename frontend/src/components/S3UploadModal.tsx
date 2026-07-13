@@ -185,11 +185,16 @@ export function S3UploadModal({
     if (!thumbnailPrompt) return;
     setIsGeneratingThumbnail(true);
     try {
-      const res = await aiAPI.generateThumbnails({ topic: thumbnailPrompt });
-      setGeneratedThumbnails(res.data.thumbnails.map((t: any) => t.url));
+      // Direct completely free generation using Pollinations.ai (Generating 1 to avoid IP rate limits)
+      const seed = Math.floor(Math.random() * 1000000);
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(thumbnailPrompt)}?width=1280&height=720&nologo=true&seed=${seed}&model=flux`;
+      
+      setSelectedThumbnail(url);
+      setGeneratedThumbnails([]);
+      toast.success("Thumbnail generated instantly!");
     } catch (err) {
       console.error("Thumbnail generation failed:", err);
-      toast.error("Failed to generate thumbnails");
+      toast.error("Failed to generate thumbnail");
     } finally {
       setIsGeneratingThumbnail(false);
     }

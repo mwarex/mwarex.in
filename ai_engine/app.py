@@ -45,7 +45,7 @@ NODE_API_URL = os.getenv("NODE_API_URL", "http://localhost:8000")
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-
+AI_WEBHOOK_SECRET = os.getenv("AI_WEBHOOK_SECRET", "")
 
 s3_client = boto3.client(
     "s3",
@@ -128,7 +128,8 @@ def report_progress(video_id, percent, message):
         return
     try:
         url = f"{NODE_API_URL}/api/v1/videos/{video_id}/ai-progress"
-        requests.post(url, json={"percent": percent, "message": message}, timeout=5)
+        headers = {"x-ai-secret": AI_WEBHOOK_SECRET}
+        requests.post(url, json={"percent": percent, "message": message}, headers=headers, timeout=5)
     except Exception:
         pass
 
@@ -932,7 +933,8 @@ def process_video_background(video_id, file_url, ai_prompt):
         }
         
         webhook_url = f"{NODE_API_URL}/api/v1/videos/{video_id}/ai-callback"
-        requests.post(webhook_url, json=callback_payload, timeout=15)
+        headers = {"x-ai-secret": AI_WEBHOOK_SECRET}
+        requests.post(webhook_url, json=callback_payload, headers=headers, timeout=15)
         
         print(f"\n[PIPELINE SUCCESS] Video {video_id} processed!")
         print(f"  16:9: {url_16_9}")
@@ -945,7 +947,8 @@ def process_video_background(video_id, file_url, ai_prompt):
         report_progress(video_id, 0, f"Processing failed: {str(e)[:80]}")
         webhook_url = f"{NODE_API_URL}/api/v1/videos/{video_id}/ai-callback"
         try:
-            requests.post(webhook_url, json={"status": "failed", "message": f"Processing failed: {str(e)}"}, timeout=10)
+            headers = {"x-ai-secret": AI_WEBHOOK_SECRET}
+            requests.post(webhook_url, json={"status": "failed", "message": f"Processing failed: {str(e)}"}, headers=headers, timeout=10)
         except Exception:
             pass
     
@@ -1118,7 +1121,8 @@ def extract_clips_background(youtube_url, video_id, file_url, room_id, creator_i
         report_progress(video_id, 100, f"All {len(clips_payload)} clips extracted! 🎉")
         
         webhook_url = f"{NODE_API_URL}/api/v1/videos/{video_id}/clips-callback"
-        requests.post(webhook_url, json={
+        headers = {"x-ai-secret": AI_WEBHOOK_SECRET}
+        requests.post(webhook_url, headers=headers, json={
             "status": "success",
             "clips": clips_payload,
             "transcript": transcript["text"][:5000],
@@ -1135,7 +1139,8 @@ def extract_clips_background(youtube_url, video_id, file_url, room_id, creator_i
         report_progress(video_id, 0, f"Extraction failed: {str(e)[:80]}")
         webhook_url = f"{NODE_API_URL}/api/v1/videos/{video_id}/clips-callback"
         try:
-            requests.post(webhook_url, json={"status": "failed", "message": f"Extraction failed: {str(e)}"}, timeout=10)
+            headers = {"x-ai-secret": AI_WEBHOOK_SECRET}
+            requests.post(webhook_url, json={"status": "failed", "message": f"Extraction failed: {str(e)}"}, headers=headers, timeout=10)
         except Exception:
             pass
     
@@ -1179,7 +1184,8 @@ def generate_captions_background(video_id, file_url):
         report_progress(video_id, 100, "Captions ready!")
         
         webhook_url = f"{NODE_API_URL}/api/v1/videos/{video_id}/ai-callback"
-        requests.post(webhook_url, json={
+        headers = {"x-ai-secret": AI_WEBHOOK_SECRET}
+        requests.post(webhook_url, headers=headers, json={
             "status": "success",
             "captionFileUrl": caption_url,
             "transcript": transcript["text"][:5000],

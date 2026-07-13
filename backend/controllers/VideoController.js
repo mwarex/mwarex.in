@@ -262,6 +262,15 @@ class VideoController extends BaseController {
             if (clips && clips.length > 0) {
                 const creatorId = parentVideo ? parentVideo.creatorId : req.body.creatorId;
                 const roomId = parentVideo ? parentVideo.roomId : req.body.roomId;
+
+                if (parentVideo) {
+                    // Delete placeholder clips to replace them with the real ones
+                    const placeholders = await videoModel.find({ parentVideoId: parentVideo._id, status: "ai_processing", isClip: true });
+                    for (const p of placeholders) {
+                        await videoModel.findByIdAndDelete(p._id);
+                        this.emitVideoUpdate({ io: req.io, body: { roomId } }, { _id: p._id, roomId }, "video_deleted");
+                    }
+                }
                 
                 const clipDocs = [];
                 for (const clip of clips) {
@@ -492,7 +501,6 @@ class VideoController extends BaseController {
                 const video = await videoModel.findById(videoId);
                 if (video) fileUrl = video.rawFileUrl || video.fileUrl;
             } else if (youtubeUrl && !videoId) {
-                // Create a placeholder video so the frontend can track progress
                 const newParent = new videoModel({
                     title: "YouTube Import",
                     description: youtubeUrl,
@@ -505,6 +513,22 @@ class VideoController extends BaseController {
                 targetVideoId = newParent._id.toString();
                 // Tell frontend a new video was added
                 this.emitVideoUpdate({ io: req.io, body: { roomId } }, newParent, "video_uploaded");
+
+                // Generate placeholder clips to match the old UX
+                const placeholderScores = [85, 75, 80, 90];
+                for (let i = 0; i < 4; i++) {
+                    const placeholderClip = new videoModel({
+                        title: `Extracting Clip ${i + 1}...`,
+                        status: "ai_processing",
+                        creatorId: req.userId,
+                        roomId,
+                        isClip: true,
+                        parentVideoId: targetVideoId,
+                        viralScore: placeholderScores[i]
+                    });
+                    await placeholderClip.save();
+                    this.emitVideoUpdate({ io: req.io, body: { roomId } }, placeholderClip, "video_uploaded");
+                }
             }
 
             const pythonUrl = process.env.PYTHON_API_URL || "http://localhost:5001";
