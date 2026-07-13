@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Maintain dependencies for npm (Frontend)
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Maintain dependencies for npm (Backend)
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Maintain dependencies for pip (Python AI Engine)
+  - package-ecosystem: "pip"
+    directory: "/ai_engine"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
