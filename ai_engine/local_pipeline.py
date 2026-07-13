@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from typing import TypedDict, List, Dict, Any
 
 from faster_whisper import WhisperModel
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.graph import StateGraph, START, END
 
@@ -305,10 +305,10 @@ def node_transcribe(state: VideoState) -> VideoState:
     return {"audio_path": audio, "video_duration": dur, "words": words, "segments": sentences, "status": "Transcribed"}
 
 def node_plan(state: VideoState) -> VideoState:
-    print("\n--- [Ollama] Strategizing Top 0.1% Cinematic B-Roll Placements ---")
+    print("\n--- [Groq] Strategizing Top 0.1% Cinematic B-Roll Placements ---")
     segments = state["segments"]
     
-    llm = ChatOllama(model="qwen3:4b", temperature=0.2)
+    llm = ChatGroq(model="llama3-70b-8192", temperature=0.2, groq_api_key=os.getenv("GROQ_API_KEY"))
     
     transcript_summary = ""
     for i, seg in enumerate(segments):
