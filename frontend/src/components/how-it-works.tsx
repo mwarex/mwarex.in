@@ -34,7 +34,7 @@ const workflowSteps = [
     {
         step: 5,
         title: "One-Click Publish",
-        description: "Approve the final cut and stream it directly to YouTube via API. No downloading heavy files back to your PC.",
+        description: "Approve the final cut and stream it directly to YouTube, Instagram, X, linkedIn via API. No downloading heavy files back to your PC.",
         icon: Youtube,
     },
 ];

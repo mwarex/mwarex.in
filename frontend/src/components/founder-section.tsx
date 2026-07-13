@@ -13,7 +13,7 @@ const founderImages = [
 
 export function FounderSection() {
     return (
-        <section className="relative py-32 md:py-48 overflow-hidden bg-[#111111] border-t border-white/5">
+        <section id="founder" className="relative py-32 md:py-48 overflow-hidden bg-[#111111] border-t border-white/5">
             {/* Background Minimalist Ambiance */}
             <div className="absolute inset-0 pointer-events-none z-0">
                 <img 

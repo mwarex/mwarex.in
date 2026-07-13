@@ -6,13 +6,15 @@ import Link from "next/link";
 import { MWareXLogo } from "@/components/mwarex-logo";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { SiteHeader } from './site-header';
+import { MagicalDust } from './magical-dust';
 
 export function HeroSection() {
     const [menuOpen, setMenuOpen] = useState(false);
 
     const navLinks = [
         { label: "Features", href: "/#features" },
-        { label: "Solutions", href: "/#workflow" },
+        { label: "Founder", href: "/#founder" },
         { label: "How It Works", href: "/#workflow" },
         { label: "Pricing", href: "/#pricing" },
         { label: "Resources", href: "/support" },
@@ -37,6 +39,9 @@ export function HeroSection() {
                 
                 {/* ── Page Merge Gradient (Bottom Shading) ── */}
                 <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#111111] to-transparent z-10" />
+                
+                {/* ── Magical Dust Particles from Gate ── */}
+                <MagicalDust />
             </div>
 
             {/* ══ Navigation Bar ══ */}
