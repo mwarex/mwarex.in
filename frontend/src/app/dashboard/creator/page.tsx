@@ -849,8 +849,22 @@ export default function CreatorDashboard() {
         )}
       >
         {/* Logo Area */}
-        <div className={cn("p-5 border-b border-border flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between")}>
-          <div className="min-w-max"><MWareXLogo showText={!isSidebarCollapsed} size="md" /></div>
+        <div className={cn("px-4 py-3 border-b border-border flex items-center h-[72px]", isSidebarCollapsed ? "justify-center" : "justify-between")}>
+          <div className={cn("min-w-max transition-all duration-200 overflow-hidden", isSidebarCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100 block")}>
+            <MWareXLogo showText={true} size="md" />
+          </div>
+          <button
+            onClick={() => {
+              if (window.innerWidth >= 1024) {
+                setIsSidebarCollapsed(!isSidebarCollapsed);
+              } else {
+                setIsSidebarOpen(false);
+              }
+            }}
+            className="p-2 rounded-lg hover:bg-secondary text-muted-foreground transition-colors flex items-center justify-center cursor-pointer shrink-0"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Workspace Switcher */}
@@ -1020,14 +1034,8 @@ export default function CreatorDashboard() {
         >
           <div className="flex items-center gap-4">
             <button
-              onClick={() => {
-                if (window.innerWidth >= 1024) {
-                  setIsSidebarCollapsed(!isSidebarCollapsed);
-                } else {
-                  setIsSidebarOpen(!isSidebarOpen);
-                }
-              }}
-              className="p-2 -ml-2 rounded-lg hover:bg-secondary text-muted-foreground transition-colors flex items-center justify-center cursor-pointer"
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 -ml-2 rounded-lg hover:bg-secondary text-muted-foreground transition-colors flex lg:hidden items-center justify-center cursor-pointer"
             >
               <Menu className="w-5 h-5" />
             </button>
