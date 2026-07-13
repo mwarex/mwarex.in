@@ -48,11 +48,12 @@ export default function LandingPage() {
                 >
                   {[...Array(3)].map((_, idx) => (
                     <React.Fragment key={idx}>
-                      <span className="text-xl font-bold font-serif text-white/80">Acme.Corp</span>
-                      <span className="text-xl font-bold font-mono text-white/80">Vortex</span>
+                      <span className="text-xl font-bold font-serif text-white/80">Neurome.ai</span>
+                      <span className="text-xl font-bold font-mono text-white/80">Artgez</span>
                       <span className="text-xl font-black tracking-[0.1em] text-white/80">YOUTUBE API</span>
-                      <span className="text-xl font-serif italic text-white/80">EditorInc</span>
-                      <span className="text-xl font-light tracking-[0.2em] text-white/80">STUDIO</span>
+                      <span className="text-xl font-serif italic text-white/80">CreatorDNA</span>
+                      <span className="text-xl font-light tracking-[0.2em] text-white/80">Google Studio</span>
+                      <span className="text-xl font-light tracking-[0.2em] text-white/80">Shadow Wallet</span>
                     </React.Fragment>
                   ))}
                 </motion.div>
