@@ -15,3 +15,8 @@ google-generativeai==0.8.2
 # YouTube Download
 yt-dlp>=2024.1.0
 
+# AI Pipeline (Cloud-ready)
+faster_whisper>=1.0.3
+langgraph>=0.1.5
+langchain_groq>=0.1.6
+langchain_core>=0.2.11
