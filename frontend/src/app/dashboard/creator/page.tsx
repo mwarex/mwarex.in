@@ -930,6 +930,14 @@ export default function CreatorDashboard() {
             <span className={cn("whitespace-nowrap transition-opacity duration-200", isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")}>Integrations</span>
           </button>
 
+          <button
+            onClick={() => { setActiveView("pipeline"); setIsSidebarOpen(false); }}
+            title={isSidebarCollapsed ? "AI Strategy" : undefined}
+            className={cn("w-full flex items-center py-2.5 rounded-lg font-medium text-sm transition-all overflow-hidden", isSidebarCollapsed ? "justify-center px-0" : "gap-3 px-3", activeView === "pipeline" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")}
+          >
+            <Cpu className="w-4 h-4 shrink-0" />
+            <span className={cn("whitespace-nowrap transition-opacity duration-200", isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")}>AI Strategy</span>
+          </button>
 
           <button
             onClick={() => { setActiveView("future"); setIsSidebarOpen(false); }}
