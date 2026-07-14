@@ -27,6 +27,7 @@ router.get("/google", (req, res) => {
       ],
     });
 
+
     return res.redirect(url);
   } catch (err) {
     console.error("Google Auth Error:", err.message);
