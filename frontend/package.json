@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@types/three": "^0.183.1",
+    "@types/three": "^0.185.1",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -28,7 +28,7 @@
     "swiper": "^12.1.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "three": "^0.183.2"
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",
